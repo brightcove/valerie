@@ -4,26 +4,37 @@ valerie
 ===
 > call on me
 
-A lightweight unassuming validation library for whatever
+A first class validation library for the JVM
 
-## Why?
-Most validation libraries are oriented around making sure your business objects are in a desirable state,
-but when it comes time to validate something that is less well defined the structure may prove to be too rigid.
+First Class Validation
+---
+Most validation libraries are defined in terms of an established business model and are therefore
+second class in relation to that model. This leads to validation effectively being coneptually _behind_ the binding
+of input to the model, rather than in between the input and the model; to put it another way most
+validation libraries are focused on validating *objects* rather than less constrained *input*.
+By providing first class validation that is not bound to a defined model Valerie allows for a wider range
+of validation rules for an accordingly wide range of possible inputs.
 
-Most validation frameworks are oriented around validating _objects_ while valerie instead helps to validate _input_.
-While objects represent some form of expected structure (and provide value in doing so), input is...whatever a
-client tries to send you.
+The more common second class approach mentioned above of defining validation in terms of your model
+is a very good one as it provides many conveniences, is generally DRY'er, and can highlight the role of the model in the code.
+There are times, however, when this approach becomes overly-restrictive. Some examples may include:
+ * providing richer feedback to less defined or variable user input
+ * allowing the model to evolve cleanly while migrating the API to that model
+ * separating the read/query model from the write/command model (CQRS)
 
-If you want submitted input to be different from the defined business model
-([Command Model](http://martinfowler.com/bliki/CQRS.html)) or you just want to provide better feedback for
-whatever kind of garbage someone may throw at you, then a lot of existing frameworks either get in the way
-or lead to so much of a mess that you lose any structural or declarative benefit.
+### Example
+TBD
 
-## How?
-Validation is a good fit for the functional programming paradigm so that is the basis for this library
-(it will initially be entirely functional for conceptual clarity). Descriptive validation rules can
-be created by creating appropriately named functions (normally out of more primitive functions).
 
-This will initially be written in Groovy though other languages could be supported fairly easily.
+### Horses for Courses
+The separation of validation is likely to lead to more work and a more fragmented domain model, but in cases
+like those above second class validation may start to get in the way rather than offering help.
+The ensuing implementation difficulties and/or divergent changes can lead to a loss of code structure
+and readibility. Valerie provides a decoupled alternative which allows for consistent and declarative code.
 
-User oriented information should be created, possibly in a GitHub wiki.
+The goal of this project is not to improve upon or replace existing
+validation libraries but to solve a slightly different problem.
+If defining your validation in terms of your model works, then you should
+do so: if you find your model getting blurry or polluted due to validation concerns that don't fit in cleanly,
+or the general validation logic has devolved into a tangle due to the restrictions of your validation framework,
+then switching to first class validation may make sense.
