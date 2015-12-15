@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/brightcove/valerie.svg?branch=master)](https://travis-ci.org/brightcove/valerie)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 valerie
