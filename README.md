@@ -10,13 +10,13 @@ A first class validation library for the JVM
 First Class Validation
 ---
 Most validation libraries are defined in terms of an established business model and are therefore
-second class in relation to that model. This leads to validation effectively being coneptually _behind_ the binding
-of input to the model, rather than in between the input and the model; to put it another way most
+second class in relation to that model. This leads to validation being conceptually _behind_ the binding
+of input to the model, rather than in between the input and the model; to put it another way, most
 validation libraries are focused on validating *objects* rather than less constrained *input*.
-By providing first class validation that is not bound to a defined model Valerie allows for a wider range
+By providing first class validation that is not bound to a defined model, Valerie allows for a wider range
 of validation rules for an accordingly wide range of possible inputs.
 
-The more common second class approach mentioned above of defining validation in terms of your model
+The more common second class approach mentioned above (defining validation in terms of your model)
 is a very good one as it provides many conveniences, is generally DRY'er, and can highlight the role of the model in the code.
 There are times, however, when this approach becomes overly-restrictive. Some examples may include:
  * providing richer feedback to less defined or variable user input
@@ -24,12 +24,11 @@ There are times, however, when this approach becomes overly-restrictive. Some ex
  * separating the read/query model from the write/command model (CQRS)
 
 ### Example
-TBD
-
+TODO
 
 ### Horses for Courses
 The separation of validation is likely to lead to more work and a more fragmented domain model, but in cases
-like those above second class validation may start to get in the way rather than offering help.
+like those above, second class validation may start to get in the way rather than offering help.
 The ensuing implementation difficulties and/or divergent changes can lead to a loss of code structure
 and readibility. Valerie provides a decoupled alternative which allows for consistent and declarative code.
 
