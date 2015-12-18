@@ -358,4 +358,11 @@ class Idator implements Check {
      */
     Check otherwise() {
         checkers.pass() }
+
+    /**
+     * Convenience delegation for use of Check in when/cond, etc.
+     */
+    Check satisfies(Closure test) {
+        checkers.satisfies(test, resultKey, 'Invalid input', Result.CODE_ILLEGAL_VALUE)
+    }
 }
