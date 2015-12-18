@@ -259,12 +259,15 @@ class Idator implements Check {
      * if none match returns ResultMap.passed()
      */
     Check cond(LinkedHashMap<Check, Closure> mapping) {
+        cond({input->input}, mapping)
+    }
+    Check cond(Closure accessor, LinkedHashMap<Check, Closure> mapping) {
         LinkedHashMap<Check, Check> condMap = mapping.collectEntries {
-            [(it.key): new Idator(checkers, stashed, resultKey, it.value)]
+            [(it.key): new Idator(checkers, stashed, resultKey).using(it.value)]
         }
         return { input ->
             for (Map.Entry<Check, Check> entry: condMap) {
-                if ((entry.key.call(input)) == ResultMap.passed()) {
+                if ((entry.key.call(accessor(input))) == ResultMap.passed()) {
                     return entry.value.call(input)
                 }
             }

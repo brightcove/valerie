@@ -224,6 +224,26 @@ class IdatorTest extends Specification {
         []        | [root:[new val.Result('is not of type Set', val.Result.CODE_ILLEGAL_VALUE)]]
     }
 
+    def 'cond takes an optional closure to define how the tested input will be accessed'() {
+        given:
+        def check = new Idator(checkers, [:], 'root').using{
+            cond({it?.child}, [
+                    (isInstanceOf(String))     : { hasSizeLte(5) },
+                    (isInstanceOf(Collection)) : { isInstanceOf(Set) }
+            ])
+        }
+
+        expect:
+        check(input) == ResultMap.from(results)
+
+        where:
+        input                                       | results
+        [child: 1]                                  | [:]
+        [child: 'a' ]                               | [:]
+        [child: '123456', a:1, b:2, c:3, d:4, e:5]  | [root:[new val.Result('should be no longer than 5', val.Result.CODE_TOO_LONG)]]
+        [child: [] as Set]                          | [root:[new val.Result('is not of type Set', val.Result.CODE_ILLEGAL_VALUE)]]
+    }
+
     def 'define loads an initial validation scope'() {
         given:
         def definedCheck = new val.Idator().using{isNotNull('test')}
