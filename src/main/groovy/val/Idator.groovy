@@ -79,6 +79,7 @@ class Idator implements Check {
      */
     //TODO: allow per instance extension
     void registerChecker(String name, Closure closure) {
+        closure.delegate = this
         extraChecks[name] = closure
     }
 
