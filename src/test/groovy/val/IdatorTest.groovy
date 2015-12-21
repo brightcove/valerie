@@ -267,4 +267,23 @@ class IdatorTest extends Specification {
         validator.using{define myTestChecker('a')}('input') == testResult
     }
 
+    def 'custom registered checkers behave consistently with standard checkers'() {
+        given:
+        def validator = new val.Idator()
+        validator.registerChecker('isRequiredString', { isNotNull() & isInstanceOf(String) & hasSizeGte(1) })
+
+        expect:
+        validator.using{
+            subDefine child: { isRequiredString() }
+            define name: { isRequiredString() }
+        }(input) == ResultMap.from(expected)
+
+        where:
+        input              | expected
+        [child: 'valid']   | [name: [new val.Result('required field cannot be null', 'REQUIRED_FIELD')]]
+        [:]                | [name: [new val.Result('required field cannot be null', 'REQUIRED_FIELD')],
+                              'root.child': [new val.Result('required field cannot be null', 'REQUIRED_FIELD')]]
+
+    }
+
 }

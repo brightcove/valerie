@@ -26,8 +26,6 @@ class Idator implements Check {
      */
     final Map stashed  //kind of like the Borg pattern
 
-    final Map<String, Closure> extraChecks = [:]
-
     /**
      * The default key for any ResultMaps from any Checks defined for this Idators
      */
@@ -54,11 +52,19 @@ class Idator implements Check {
         this.resultKey = key
     }
 
+    def childIdator(LinkedHashMap overrides = [:]) {
+        //Create array for positional parameters merging in overrides
+        def args = [overrides.checkers    ?: checkers,
+                    overrides.stashed     ?: stashed,
+                    overrides.resultKey   ?: resultKey]
+        new Idator(*args)
+    }
+
     /**
      * @deprecated 0.4.0: prefer constructor followed by define
      */
     @Deprecated
-    public Idator(Checkers checkers, Map stashed, String key = 'root', Closure definition){
+    public Idator(Checkers checkers, Map stashed, String key, Closure definition){
         this(checkers, stashed, key)
         using(definition)
     }
@@ -77,16 +83,8 @@ class Idator implements Check {
      * @param name The name by which the Checker can be called
      * @param closure Closure containing logic to create Check
      */
-    //TODO: allow per instance extension
     void registerChecker(String name, Closure closure) {
-        closure.delegate = this
-        extraChecks[name] = closure
-    }
-
-    def methodMissing(String name, args) {
-        if (extraChecks[name])
-            extraChecks[name](*args)
-        else throw new MissingMethodException(name, this.class, args)
+        this.metaClass."${name}" << closure
     }
 
     /**
@@ -207,7 +205,7 @@ class Idator implements Check {
      * @return Check created from the provided Definition
      */
     Check withValue(String child, String resultKey, Closure definition) {
-        def scope = new Idator(checkers, stashed, resultKey).using(definition)
+        def scope = childIdator(resultKey: resultKey).using(definition)
         return { input ->
             def value = input == null ? null            // if input is null return null
                       : child == null ? input           // if child is null use present object
@@ -236,7 +234,7 @@ class Idator implements Check {
      * @return Check which will iterate over the Iterable and evaluate the defined Check for each item
      */
     Check withEachValue(Closure<Check> definition) {
-        def scope = new Idator(checkers, stashed, resultKey, definition)
+        def scope = childIdator().using(definition)
         return { input ->
             def results = ResultMap.passed()
             //Evaluate each input value using the same Check
@@ -264,7 +262,7 @@ class Idator implements Check {
     }
     Check cond(Closure accessor, LinkedHashMap<Check, Closure> mapping) {
         LinkedHashMap<Check, Check> condMap = mapping.collectEntries {
-            [(it.key): new Idator(checkers, stashed, resultKey).using(it.value)]
+            [(it.key): childIdator().using(it.value)]
         }
         return { input ->
             for (Map.Entry<Check, Check> entry: condMap) {
@@ -289,13 +287,13 @@ class Idator implements Check {
      * {@link val.Checkers#when} accepting a Definition for bodyCheck
      */
     Check when(Check check, Closure definition) {
-        checkers.when(check, new Idator(checkers, stashed, resultKey, definition))
+        checkers.when(check, childIdator().using(definition))
     }
     /**
      * {@link val.Checkers#unless} accepting a Definition for bodyCheck
      */
     Check unless(Check check, Closure closure) {
-        checkers.unless(check, new Idator(checkers, stashed, resultKey, closure))
+        checkers.unless(check, childIdator().using(closure))
     }
 
     /**
