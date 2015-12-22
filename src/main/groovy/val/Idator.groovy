@@ -57,7 +57,7 @@ class Idator implements Check {
         def args = [overrides.checkers    ?: checkers,
                     overrides.stashed     ?: stashed,
                     overrides.resultKey   ?: resultKey]
-        new Idator(*args)
+        this.class.newInstance(*args)
     }
 
     /**
