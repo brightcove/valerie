@@ -162,6 +162,11 @@ class Idator implements Check {
     void require(Check check) {
         requiredChecks << check
     }
+    void require(Map<String, Closure> entries) {
+        entries.each{k,v->
+            require(withValue(k, v))
+        }
+    }
 
     //Under which key the value for this scope should be stashed if any
     private String toStash
