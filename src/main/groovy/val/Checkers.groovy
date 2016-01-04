@@ -20,9 +20,9 @@ class Checkers {
      * @param code Code for Result
      * @return Check which will return ResultMap with constructed Result
      */
-    Check fail(String key = 'fail',
-               String message = 'failed because you said so',
-               String code = val.Result.CODE_ILLEGAL_VALUE) {
+    Check fail(key = 'fail',
+               message = 'failed because you said so',
+               code = val.Result.CODE_ILLEGAL_VALUE) {
         {input -> ResultMap.from((key): [new Result(message, code)])}
     }
 
@@ -35,9 +35,9 @@ class Checkers {
      * @return Check to validate that input contains specified member
      */
     Check hasMember(String member,
-                    String key,
-                    String message = "required field ${member} is not present",
-                    String code = val.Result.CODE_REQUIRED_FIELD) {
+                    key,
+                    message = "required field ${member} is not present",
+                    code = val.Result.CODE_REQUIRED_FIELD) {
         satisfies({input ->
             input?.containsKey(member)
         }, key, message, code)
@@ -52,9 +52,9 @@ class Checkers {
      * @return Check which will validate field membership
      */
     Check hasOnlyFieldsIn(Set<String> fields,
-                          String key,
-                          String message = 'field is unknown',
-                          String code = val.Result.CODE_ILLEGAL_FIELD) {
+                          key,
+                          message = 'field is unknown',
+                          code = val.Result.CODE_ILLEGAL_FIELD) {
         { input ->
             if (!(input instanceof Map))
                 return val.ResultMap.from((key): [new val.Result('only maps are supported', 'ILLEGAL_VALUE')])
@@ -78,9 +78,9 @@ class Checkers {
      * @return Check which will validate field membership
      */
     Check hasOnlyFieldsIn(Class targetClass,
-                          String key,
-                          String message = 'field is unknown',
-                          String code = val.Result.CODE_ILLEGAL_FIELD) {
+                          key,
+                          message = 'field is unknown',
+                          code = val.Result.CODE_ILLEGAL_FIELD) {
         hasOnlyFieldsIn(new HashSet<>(targetClass.getDeclaredFields()*.name), key, message, code)
     }
 
@@ -94,9 +94,9 @@ class Checkers {
      * @return Check to validate that input has a size greater than or equal to min
      */
     Check hasSizeGte(Integer min,
-                     String key,
-                     String message = "should be on least ${min} long",
-                     String code = val.Result.CODE_TOO_SHORT) {
+                     key,
+                     message = "should be on least ${min} long",
+                     code = val.Result.CODE_TOO_SHORT) {
         satisfies({input ->
             input == null || input?.size() >= min}, key, message, code)
     }
@@ -111,9 +111,9 @@ class Checkers {
      * @return Check to validate that input has a size less than or equal to max
      */
     Check hasSizeLte(Integer max,
-                     String key,
-                     String message = "should be no longer than ${max}",
-                     String code = val.Result.CODE_TOO_LONG) {
+                     key,
+                     message = "should be no longer than ${max}",
+                     code = val.Result.CODE_TOO_LONG) {
         satisfies({input ->
             input?.size() <= max}, key, message, code)
     }
@@ -127,9 +127,9 @@ class Checkers {
      * @return Check to validate that input has a value greater than or equal to min
      */
     Check hasValueGte(Object min,
-                      String key,
-                      String message = "should not be less than ${min}",
-                      String code = val.Result.CODE_ILLEGAL_VALUE) {
+                      key,
+                      message = "should not be less than ${min}",
+                      code = val.Result.CODE_ILLEGAL_VALUE) {
         satisfies({input ->
             input == null || input >= min}, key, message, code)
     }
@@ -143,9 +143,9 @@ class Checkers {
      * @return Check to validate that input has a value less than or equal to max
      */
     Check hasValueLte(Object max,
-                      String key,
-                      String message = "should not be greater than ${max}",
-                      String code = val.Result.CODE_ILLEGAL_VALUE) {
+                      key,
+                      message = "should not be greater than ${max}",
+                      code = val.Result.CODE_ILLEGAL_VALUE) {
         satisfies({input ->
             input == null || input <= max}, key, message, code)
     }
@@ -159,9 +159,9 @@ class Checkers {
      * @return Check to validate that input is an instance of type
      */
     Check isInstanceOf(Class<?> type,
-                   String key,
-                   String message = "is not of type ${type.simpleName}",
-                   String code = val.Result.CODE_ILLEGAL_VALUE) {
+                       key,
+                       message = "is not of type ${type.simpleName}",
+                       code = val.Result.CODE_ILLEGAL_VALUE) {
         satisfies({input ->
             input == null || type.isInstance(input) }, key, message, code)
     }
@@ -175,9 +175,9 @@ class Checkers {
      * @return Check to validate that input is a member of the allowed set
      */
     Check isOneOf(Collection allowed,
-                  String key,
-                  String message = "is not one of allowed values: ${allowed}",
-                  String code = val.Result.CODE_ILLEGAL_VALUE) {
+                  key,
+                  message = "is not one of allowed values: ${allowed}",
+                  code = val.Result.CODE_ILLEGAL_VALUE) {
         Set allowedSet = allowed as Set
         satisfies({input ->
             allowedSet.contains(input)}, key, message, code)
@@ -192,9 +192,9 @@ class Checkers {
      * @return Check to validate that input is a possible value for enumClass
      */
     Check isOneOf(Class<? extends Enum> enumClass,
-                  String key,
-                  String message = "should be one of ${EnumSet.allOf(enumClass)}",
-                  String code = val.Result.CODE_ILLEGAL_VALUE) {
+                  key,
+                  message = "should be one of ${EnumSet.allOf(enumClass)}",
+                  code = val.Result.CODE_ILLEGAL_VALUE) {
         satisfies({input ->
             if (!input || enumClass.isInstance(input)) return true
             try {
@@ -214,9 +214,9 @@ class Checkers {
      * @param code Code for Result if input is null
      * @return Check to validate that input is not null
      */
-    Check isNotNull(String key,
-                    String message = "required field cannot be null",
-                    String code = val.Result.CODE_REQUIRED_FIELD) {
+    Check isNotNull(key,
+                    message = "required field cannot be null",
+                    code = val.Result.CODE_REQUIRED_FIELD) {
         satisfies({input ->
             input != null }, key, message, code)
     }
@@ -230,9 +230,9 @@ class Checkers {
      * @param code Code for Result if input is not null
      * @return Check to validate that input is null
      */
-    Check isNull(String key,
-                 String message = "field must be null",
-                 String code = val.Result.CODE_ILLEGAL_VALUE) {
+    Check isNull(key,
+                 message = "field must be null",
+                 code = val.Result.CODE_ILLEGAL_VALUE) {
         satisfies({input ->
             input == null }, key, message, code)
     }
@@ -249,9 +249,9 @@ class Checkers {
      * @return Check to validate that stringified input matches regular expression
      */
     Check matchesRe(String pattern,
-                    String key,
-                    String message = "does not match required pattern",
-                    String code = val.Result.CODE_ILLEGAL_VALUE) {
+                    key,
+                    message = "does not match required pattern",
+                    code = val.Result.CODE_ILLEGAL_VALUE) {
         Pattern regex = ~pattern
         satisfies({input ->
             input == null || input.toString().matches(regex) }, key, message, code)
@@ -278,10 +278,10 @@ class Checkers {
      * @return Check to evaluate input
      */
     Check satisfies(Closure<Boolean> test,
-                    String key,
-                    String message,
-                    String code) {
-        satisfies(test, { input -> ResultMap.from([ (key): [new Result(message, code)] ]) })
+                    key,
+                    message,
+                    code) {
+        satisfies(test, { input -> ResultMap.from([ (key.toString()): [new Result(message.toString(), code.toString())] ]) })
     }
 
     /**
@@ -382,11 +382,11 @@ class Checkers {
      * @return Check which will evaluate inner Check with input and return inverted Result
      */
     Check not(Check check,
-              String key='not',
-              String message='condition satisfied which should not have been',
-              String code='NEGATED_CHECK') {
+              key='not',
+              message='condition satisfied which should not have been',
+              code='NEGATED_CHECK') {
         { input ->
-            check(input) == ResultMap.passed() ? ResultMap.from([(key): [new Result(message, code)]])
+            check(input) == ResultMap.passed() ? ResultMap.from([(key.toString()): [new Result(message.toString(), code.toString())]])
                                                : ResultMap.passed() }
     }
 

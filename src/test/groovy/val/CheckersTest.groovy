@@ -225,13 +225,26 @@ class CheckersTest extends Specification {
 
     def 'satisfies(test,key,message,code) returns ResultMap based on arguments if test(value) fails, else a passing ResultMap'() {
         expect:
-        v.satisfies({it}, 'invalid', 'uh oh', 'BAD_VALUE')
+        v.satisfies({it}, 'invalid', 'uh oh', 'BAD_VALUE')(input) == ResultMap.from(expected)
 
         where:
         input     | expected
         true      | [:]
         false     | [invalid: [new val.Result('uh oh', 'BAD_VALUE')]]
     }
+
+    def 'satisfies(test,key,message,code) allows late bound GStrings to include info input in the result'() {
+        expect:
+        v.satisfies({it}, 'invalid', "$input is not truthy", 'BAD_VALUE')(input) == ResultMap.from(expected)
+
+        where:
+        input     | expected
+        true      | [:]
+        false     | [invalid: [new val.Result('false is not truthy', 'BAD_VALUE')]]
+        []        | [invalid: [new val.Result('[] is not truthy', 'BAD_VALUE')]]
+    }
+
+
 
     def 'satisfies(test, onFail) returns onFail result if test returns non-truthy, else a passing ResultMap'() {
         expect:

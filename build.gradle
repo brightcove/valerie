@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.3.7'
-    testCompile 'org.spockframework:spock-core:1.0-groovy-2.3'
+    compile 'org.codehaus.groovy:groovy-all:2.4.5'
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -62,3 +62,5 @@ bintray {
 bintrayUpload.onlyIf{
     !(version ==~ /.*SNAPSHOT/)
 }
+
+wrapper.gradleVersion = '2.9'
