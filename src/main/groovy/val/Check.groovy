@@ -51,23 +51,13 @@ trait Check {
     }
 
     /**
-     * Support for Check reverse composition.
+     * Compose Check which returns the combined results of the two addends
      * When evaluating the composed Check, evaluate all contained Checks and return merged ResultMap
      * @param other the Check to compose with the current Check
      * @return the new composed Check
      */
-    Check leftShift(Check other) {
+    Check plus(Check other) {
         new AllCheck(other, this)
-    }
-
-    /**
-     * Support for Check forward composition.
-     * When evaluating the composed Check, evaluate all contained Checks and return merged ResultMap
-     * @param other the Check to compose with the current Check
-     * @return the new composed Check
-     */
-    Check rightShift(Check other) {
-        new AllCheck(this, other)
     }
 }
 

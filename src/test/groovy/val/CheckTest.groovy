@@ -59,12 +59,12 @@ class CheckTest extends Specification {
         [failed: [new Result('f','f')]] | [failed: [new Result('f1','f1')]] | [failed: [new Result('f1','f1')]] | ['check1', 'check2']
     }
 
-    def 'leftShift performs reverse composition'() {
+    def 'add performs composes without short circuiting'() {
         given:
         Set wasCalled = new HashSet<>()
         Check check1 = { value -> wasCalled.add('check1'); ResultMap.from(result1) }
         Check check2 = { value -> wasCalled.add('check2'); ResultMap.from(result2) }
-        Check composedCheck = check1 << check2
+        Check composedCheck = check1 + check2
 
         when:
         def result = composedCheck('input')
@@ -80,29 +80,6 @@ class CheckTest extends Specification {
         [:]                               | [failed: [new Result('f2','f2')]] | [failed: [new Result('f2','f2')]]
         [failed: [new Result('f1','f1')]] | [failed: [new Result('f2','f2')]] | [failed: [new Result('f2','f2'),
                                                                                           new Result('f1','f1')]]
-    }
-
-    def 'rightShift performs forward composition'() {
-        given:
-        Set wasCalled = new HashSet<>()
-        Check check1 = { value -> wasCalled.add('check1'); ResultMap.from(result1) }
-        Check check2 = { value -> wasCalled.add('check2'); ResultMap.from(result2) }
-        Check composedCheck = check1 >> check2
-
-        when:
-        def result = composedCheck('input')
-
-        then:
-        result == ResultMap.from(expectedResult)
-        wasCalled == ['check1', 'check2'] as Set
-
-        where:
-        result1                           | result2                           | expectedResult
-        [:]                               | [:]                               | [:]
-        [failed: [new Result('f1','f1')]] | [:]                               | [failed: [new Result('f1','f1')]]
-        [:]                               | [failed: [new Result('f2','f2')]] | [failed: [new Result('f2','f2')]]
-        [failed: [new Result('f1','f1')]] | [failed: [new Result('f2','f2')]] | [failed: [new Result('f1','f1'),
-                                                                                          new Result('f2','f2')]]
     }
 
     def 'composed checks list constructor stores the list as the members'() {
