@@ -3,13 +3,16 @@ package val
 import java.util.regex.Pattern
 
 /**
- * The functional building blocks for Valerie. The methods in this class should contain all of the validation
- * logic used by the library and can provide a complete implementation if the consuming code assumes more
+ * The functional building blocks for Valerie. The methods in this class
+ * should contain all of the validation
+ * logic used by the library and can provide a complete implementation if the
+ * consuming code assumes more
  * responsibility/noise.
  *
- * This class is stateless and purely functional. Everything remains instance based for possible benefits around
- * testing and general future proofing (such as allowing configuration). The functionality
- * in this class should also be language agnostic.
+ * This class is stateless and purely functional. Everything remains instance
+ * based for possible benefits around
+ * testing and general future proofing (such as allowing configuration). The
+ * functionality in this class should also be language agnostic.
  */
 class Checkers {
 
@@ -27,7 +30,8 @@ class Checkers {
     }
 
     /**
-     * Validate that the input contains a member with the specified name, regardless of value
+     * Validate that the input contains a member with the specified name,
+     * regardless of value
      * @param member The name of the member that input should contain
      * @param key Key for Result if member does not exist
      * @param message Message for Result if member does not exist
@@ -44,9 +48,12 @@ class Checkers {
     }
 
     /**
-     * Validates that map only contains fields that are in the Set of fields provided
-     * @param fields Set of field names from which input fields should be members
-     * @param key Key prefix which will have input field name appended (`.` separated) if input field is not in fields
+     * Validates that map only contains fields that are in the Set of fields
+     * provided
+     * @param fields Set of field names from which input fields should be
+     * members
+     * @param key Key prefix which will have input field name appended (`.`
+     * separated) if input field is not in fields
      * @param message Message for Result for each field not present in fields
      * @param code Code for Result for each field not present in fields
      * @return Check which will validate field membership
@@ -57,11 +64,14 @@ class Checkers {
                           code = val.Result.CODE_ILLEGAL_FIELD) {
         { input ->
             if (!(input instanceof Map))
-                return val.ResultMap.from((key): [new val.Result('only maps are supported', 'ILLEGAL_VALUE')])
+                return val.ResultMap.from(
+                (key): [new val.Result('only maps are supported',
+                                       'ILLEGAL_VALUE')])
             Map collectedResults = [:]
             ((Map) input).keySet().each{ fieldName ->
                 if (!fields.contains(fieldName)) {
-                    collectedResults["${key?key+'.':''}${fieldName}"] = [new val.Result(message, code)]
+                    collectedResults["${key?key+'.':''}${fieldName}"] =
+                        [new val.Result(message, code)]
                 }
             }
             val.ResultMap.from(collectedResults)
@@ -69,11 +79,14 @@ class Checkers {
     }
 
     /**
-     * Validates that map only contains fields that are declared for the Class provided
-     * @param targetClass Class whose delcared fields will become the Set of valid fields
-     * @param key Key prefix which will have input field name appended (`.` separated)
+     * Validates that map only contains fields that are declared for the Class
+     * provided
+     * @param targetClass Class whose delcared fields will become the Set of
+     * valid fields
+     * @param key Key prefix which will have input field name appended
+     * (`.` separated)
      * if input field is not valid for targetClass
-     * @param message Message for Result for each field not valid for targetClass
+     * @param message Message for Result for each invalid field for targetClass
      * @param code Code for Result for each field not valid for targetClass
      * @return Check which will validate field membership
      */
@@ -81,7 +94,8 @@ class Checkers {
                           key,
                           message = 'field is unknown',
                           code = val.Result.CODE_ILLEGAL_FIELD) {
-        hasOnlyFieldsIn(new HashSet<>(targetClass.getDeclaredFields()*.name), key, message, code)
+        hasOnlyFieldsIn(new HashSet<>(targetClass.getDeclaredFields()*.name),
+                        key, message, code)
     }
 
     /**
@@ -91,7 +105,7 @@ class Checkers {
      * @param key Key for Result if input is smaller than min
      * @param message Message for Result if input is smaller than min
      * @param code Code for Result if input is smaller than min
-     * @return Check to validate that input has a size greater than or equal to min
+     * @return Check to validate input has size greater than or equal to min
      */
     Check hasSizeGte(Integer min,
                      key,
@@ -124,7 +138,7 @@ class Checkers {
      * @param key Key for Result if input is less than min
      * @param message Message for Result if input is less than min
      * @param code Code for Result if input is less than min
-     * @return Check to validate that input has a value greater than or equal to min
+     * @return Check to validate input has value greater than or equal to min
      */
     Check hasValueGte(Object min,
                       key,
@@ -140,7 +154,7 @@ class Checkers {
      * @param key Key for Result if input is greater than max
      * @param message Message for Result if input is greater than max
      * @param code Code for Result if input is greater than max
-     * @return Check to validate that input has a value less than or equal to max
+     * @return Check to validate input has a value less than or equal to max
      */
     Check hasValueLte(Object max,
                       key,
@@ -168,9 +182,9 @@ class Checkers {
 
     /**
      * Validate that input is one of the set of allowed values provided.
-     * @param allowed The set of allowed values for which input should be a member
+     * @param allowed The set of allowed values in which input must belong
      * @param key Key for Result if input is not one of the allowed values
-     * @param message Message for Result if input is not one of the allowed values
+     * @param message Message for Result if input is not an allowed value
      * @param code Code for Result if input is not one of the allowed values
      * @return Check to validate that input is a member of the allowed set
      */
@@ -184,10 +198,11 @@ class Checkers {
     }
 
     /**
-     * Validate that input is of type enumClass or is one of the possible values for enumClass
+     * Validate that input is of type enumClass or is one of the possible
+     * values for enumClass
      * @param enumClass Enum class for which input must be a valid value
      * @param key Key for Result if input is not a valid value for enumClass
-     * @param message Message for result if input is not a valid value for enumClass
+     * @param message Message for result if input is invalid value for enumClass
      * @param code Code for Result if input is not a valid value for enumClass
      * @return Check to validate that input is a possible value for enumClass
      */
@@ -238,15 +253,16 @@ class Checkers {
     }
 
     /**
-     * Validate that the string representation of input matches the pattern specified (implicitly anchored)
+     * Validate that the string representation of input matches the pattern
+     * specified (implicitly anchored)
      *
-     * This will match using implicit stringifying (toString) so things like arrays
-     * _could_ be tested (but probably shouldn't)
+     * This will match using implicit stringifying (toString)
+     * so things like arrays _could_ be tested (but probably shouldn't)
      * @param pattern String representation of regular expression to match
      * @param key Key for Result if input does not match regular expression
-     * @param message Message for Result if input does not match regular expression
+     * @param message Message for Result if input does not match regex
      * @param code Code for Result if input does not match regular expression
-     * @return Check to validate that stringified input matches regular expression
+     * @return Check to validate that stringified input matches regex
      */
     Check matchesRe(String pattern,
                     key,
@@ -254,7 +270,8 @@ class Checkers {
                     code = val.Result.CODE_ILLEGAL_VALUE) {
         Pattern regex = ~pattern
         satisfies({input ->
-            input == null || input.toString().matches(regex) }, key, message, code)
+            input == null || input.toString().matches(regex) },
+                  key, message, code)
     }
 
     /**
@@ -270,8 +287,10 @@ class Checkers {
     //
     /**
      * Invokes predicate function test with input and if the test returns false
-     * returns a ResultMap containing an entry with a key of key and a Result having message and code
-     * @param test Closure which accepts the input and returns a Boolean to determine whether to call onFail
+     * returns a ResultMap containing an entry with a key of key and a Result
+     * having message and code
+     * @param test Closure which accepts the input and returns a Boolean to
+     * determine whether to call onFail
      * @param key Key for Result if test(input) is false
      * @param message Message for Result if test(input) is false
      * @param code Code for Result if test(input) is false
@@ -281,14 +300,20 @@ class Checkers {
                     key,
                     message,
                     code) {
-        satisfies(test, { input -> ResultMap.from([ (key.toString()): [new Result(message.toString(), code.toString())] ]) })
+        satisfies(test, { input ->
+            ResultMap.from([ (key.toString()):[new Result(message.toString(),
+                                                          code.toString())] ])
+                  })
     }
 
     /**
-     * Invokes predicate function test passing input as an argument and returns onFail result if non-truthy
+     * Invokes predicate function test passing input as an argument and
+     * returns onFail result if non-truthy
      * otherwise ResultMap.passed()
-     * @param test Closure which returns a Boolean based on the value to determine whether to call onFail
-     * @param onFail Closure which takes the input and returns the ResultMap which should indicate test failure
+     * @param test Closure which returns a Boolean based on the value to
+     * determine whether to call onFail
+     * @param onFail Closure which takes the input and returns the ResultMap
+     * which should indicate test failure
      * @return Check to evaluate input
      */
     Check satisfies(Closure<Boolean> test,
@@ -299,11 +324,13 @@ class Checkers {
 
     //
     // COMBINATORS
-    // Used to return a new check that is a combined version of the provided checks
-    // All other functions should not expect collections of closures as client code can use the appropriate combinator
+    // Used to return a new check that is a combined version of provided checks
+    // All other functions should not expect collections of closures as client
+    // code can use the appropriate combinator
     //
     /**
-     * Combine sequence of provided checks, execute all of them, and return merged results
+     * Combine sequence of provided checks, execute all of them, and return
+     * merged results
      * @param rules Sequence of Checks, all of which wil be executed
      * @return Composed Check to evaluate input and return the merged ResultMap
      */
@@ -313,9 +340,11 @@ class Checkers {
 
     /**
      * Combine sequence of provided checks with a short circuited logical `and`
-     * If any check returns a non passing ResultMap, then stop iterating and return that ResultMap
+     * If any check returns a non passing ResultMap, then stop iterating and
+     * return that ResultMap
      * @param checks Sequence of Checks to evaluate in order
-     * @return Composed Check to evaluate input and return the first non-passing ResultMap else ResultMap.passed()
+     * @return Composed Check to evaluate input and return the first
+     * non-passing ResultMap else ResultMap.passed()
      */
     Check and(Check... checks) {
         new AndCheck(checks as ArrayList)
@@ -323,10 +352,12 @@ class Checkers {
 
     /**
      * Combine sequence of provided checks with a short circuited logical 'or'
-     * If any check returns a passing ResultMap, than stop iterating and return that ResultMap
+     * If any check returns a passing ResultMap, than stop iterating and return
+     * that ResultMap
      * If no checks return a passing ResultMap, then return the last ResultMap
      * @param checks Sequence of Checks to evaluate in order
-     * @return Composed Check to evaluate input and return the first ResultMap.passed() or last non-passing
+     * @return Composed Check to evaluate input and return the first
+     * ResultMap.passed() or last non-passing
      */
     Check or(Check... checks) {
         new OrCheck(checks as ArrayList)
@@ -336,9 +367,9 @@ class Checkers {
     // OTHER HIGHER ORDER FUNCTIONS
     //
     /**
-     * If testCheck(input) passes then evaluate bodyCheck(input) and return the result,
-     * if testCheck(input) fails then return ResultMap.passed().
-     * The results of testCheck are only used for the decision above and are not returned
+     * If testCheck(input) passes then evaluate bodyCheck(input) and return the
+     * result, if testCheck(input) fails then return ResultMap.passed().
+     * The results of testCheck are only used to test above and are not returned
      * @param testCheck If passing then evaluate bodyCheck
      * @param bodyCheck Evaluated and the results returned when testCheck passes
      * @return Check which will optionally evaluate input with bodyCheck
@@ -353,7 +384,7 @@ class Checkers {
     /**
      * If testCheck(input) passes then evaluate bodyCheck and return the result,
      * if testCheck(input) fails then return ResultMap.passed().
-     * The results of testCheck are only used for the decision above and are not returned
+     * The results of testCheck are only used to test above and are not returned
      * @param testCheck If passing then evaluate bodyCheck
      * @param bodyCheck Evaluated and the results returned when testCheck passes
      * @return Check which will optionally evaluate input with bodyCheck
@@ -373,21 +404,24 @@ class Checkers {
      * otherwise return a ResultMap.passed()
      *
      * This seems a little ugly and may be subject to change or removal.
-     * A more reusable and less awkward approach may be something like (when(check, fail()))
-     * This is presently oriented towards use in testChecks as part of when/unless/etc.
+     * A more reusable and less awkward approach may be something like
+     * (when(check, fail()))
+     * This is oriented towards use in testChecks as part of when/unless/etc.
      * @param check Check for which the Result will be inverted
      * @param key Key for Result if inner Check originally passed
      * @param message Message for Result if inner Check passed
      * @param code Code for Result if inner Check passed
-     * @return Check which will evaluate inner Check with input and return inverted Result
+     * @return Check to evaluate and invert result
      */
     Check not(Check check,
               key='not',
               message='condition satisfied which should not have been',
               code='NEGATED_CHECK') {
         { input ->
-            check(input) == ResultMap.passed() ? ResultMap.from([(key.toString()): [new Result(message.toString(), code.toString())]])
-                                               : ResultMap.passed() }
+            check(input) == ResultMap.passed() ?
+        ResultMap.from([(key.toString()): [new Result(message.toString(),
+                                                      code.toString())]])
+        : ResultMap.passed() }
     }
 
 }

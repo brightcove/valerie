@@ -3,7 +3,7 @@ package val
 import groovy.transform.Immutable
 
 /**
- * The information for a single result of evaluating a check to be aggregated in a {@link ResultMap}
+ * A single Check result to be aggregated in a {@link ResultMap}
  */
 @Immutable
 class Result {
