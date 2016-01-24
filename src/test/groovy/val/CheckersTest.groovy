@@ -7,15 +7,16 @@ class CheckersTest extends Specification {
 
     def v = new Checkers()
 
-    def 'fail creates ResultMap from arguments'() {
+    def 'fail => entry'() {
         expect:
-        v.fail()('anything') == ResultMap.from('fail': [new Result('failed because you said so',
-                Result.CODE_ILLEGAL_VALUE)])
-        v.fail('foo', 'bar', 'FOO_BAR')('anything') == ResultMap.from('foo': [new Result('bar', 'FOO_BAR')])
+        v.fail()('anything') ==
+            ResultMap.from('fail': [new Result('failed because you said so',
+                                               Result.CODE_ILLEGAL_VALUE)])
+            v.fail('foo', 'bar', 'FOO_BAR')('anything') ==
+                ResultMap.from('foo': [new Result('bar', 'FOO_BAR')])
     }
 
-    @Unroll
-    def 'hasMember checks to see whether member is present, only supporting maps right now'() {
+    def 'hasMember => entry if member is not present'() {
         expect:
         v.hasMember(attribute, 'required')(input) == ResultMap.from(results)
 
@@ -23,36 +24,32 @@ class CheckersTest extends Specification {
         input            | attribute  | results
         [a:'test']       | 'a'        | [:]
         [a: null]        | 'a'        | [:]
-        [:]              | 'a'        | [required:[new val.Result('required field a is not present',
-                val.Result.CODE_REQUIRED_FIELD)]]
+        [:]              | 'a'        | [required:[
+                new val.Result('required field a is not present',
+                               val.Result.CODE_REQUIRED_FIELD)]]
     }
 
-    def 'hasOnlyFieldsIn will return errors for any fields that are not in provided set'() {
+    def 'hasOnlyFieldsIn => entry for each field not in set'() {
         expect:
-        v.hasOnlyFieldsIn(['a','b','c'] as Set, null)(input) == ResultMap.from(results)
+        v.hasOnlyFieldsIn(['a','b','c'] as Set, null)(input) ==
+            ResultMap.from(results)
 
         where:
         input                 | results
         [a:1]                 | [:]
         [a:1,b:2,c:3]         | [:]
-        [a:1,b:2,c:3,d:4,e:5] | [ d:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)],
-                                  e:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)] ]
-    }
-
-    def 'hasOnlyFieldsIn will create child keys based on provided key'() {
-        expect:
-        v.hasOnlyFieldsIn(['a','b',3] as Set, 'parent')(input) == ResultMap.from(results)
-
-        where:
-        input                 | results
-        [a:1,b:2,3:3,d:4,e:5] | ['parent.d':[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)],
-                                 'parent.e':[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)] ]
+        [a:1,b:2,c:3,d:4,e:5] | [
+        d:[new val.Result('field is unknown',
+                          val.Result.CODE_ILLEGAL_FIELD)],
+        e:[new val.Result('field is unknown',
+                          val.Result.CODE_ILLEGAL_FIELD)]
+        ]
     }
 
     class SampleClass {
         def a, b, c
     }
-    def 'hasOnlyFieldsIn will treat the declared fields of a provided Class as the allowed Set'() {
+    def 'hasOnlyFieldsIn => entry for each field not in class'() {
         expect:
         v.hasOnlyFieldsIn(SampleClass, null)(input) == ResultMap.from(results)
 
@@ -60,11 +57,28 @@ class CheckersTest extends Specification {
         input                 | results
         [a:1]                 | [:]
         [a:1,b:2,c:3]         | [:]
-        [a:1,b:2,c:3,d:4,e:5] | [ d:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)],
-                                  e:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)] ]
+        [a:1,b:2,c:3,d:4,e:5] | [
+        d:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)],
+        e:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)] ]
     }
 
-    def 'hasSizeGte checks for inclusive minimum size'() {
+    def 'hasOnlyFieldsIn builds keys from $key.$field'() {
+        expect:
+        v.hasOnlyFieldsIn(['a','b',3] as Set, 'parent')(input) ==
+            ResultMap.from(results)
+
+        where:
+        input                 | results
+        [a:1,b:2,3:3,d:4,e:5] | [
+        'parent.d':[
+            new val.Result('field is unknown',
+                           val.Result.CODE_ILLEGAL_FIELD)],
+        'parent.e':[new val.Result('field is unknown',
+                                   val.Result.CODE_ILLEGAL_FIELD)]
+        ]
+    }
+
+    def 'hasSizeGte => entry if size < min'() {
         expect:
         v.hasSizeGte(1, 'value')(input) == ResultMap.from(results)
 
@@ -74,13 +88,16 @@ class CheckersTest extends Specification {
         '1'          | [:]
         [1]          | [:]
         [a:1]        | [:]
-        ''           | [value:[new val.Result('should be on least 1 long', val.Result.CODE_TOO_SHORT)]]
-        []           | [value:[new val.Result('should be on least 1 long', val.Result.CODE_TOO_SHORT)]]
-        [:]          | [value:[new val.Result('should be on least 1 long', val.Result.CODE_TOO_SHORT)]]
+        ''           | [value:[new val.Result('should be on least 1 long',
+                                              val.Result.CODE_TOO_SHORT)]]
+        []           | [value:[new val.Result('should be on least 1 long',
+                                              val.Result.CODE_TOO_SHORT)]]
+        [:]          | [value:[new val.Result('should be on least 1 long',
+                                              val.Result.CODE_TOO_SHORT)]]
     }
 
     @Unroll
-    def 'hasSizeLte checks for inclusive maximum size'() {
+    def 'hasSizeLte => entry if size > max'() {
         expect:
         v.hasSizeLte(3, 'value')(input) == ResultMap.from(results)
 
@@ -90,12 +107,18 @@ class CheckersTest extends Specification {
         '123'              | [:]
         [1,2,3]            | [:]
         [a:1,b:2,c:3]      | [:]
-        '1234'             | [value:[new val.Result('should be no longer than 3', val.Result.CODE_TOO_LONG)]]
-        [1,2,3,4]          | [value:[new val.Result('should be no longer than 3', val.Result.CODE_TOO_LONG)]]
-        [a:1,b:2,c:3,d:4]  | [value:[new val.Result('should be no longer than 3', val.Result.CODE_TOO_LONG)]]
+        '1234'             | [value:[
+                new val.Result('should be no longer than 3',
+                               val.Result.CODE_TOO_LONG)]]
+        [1,2,3,4]          | [value:[
+                new val.Result('should be no longer than 3',
+                               val.Result.CODE_TOO_LONG)]]
+        [a:1,b:2,c:3,d:4]  | [value:[
+                new val.Result('should be no longer than 3',
+                               val.Result.CODE_TOO_LONG)]]
     }
 
-    def 'hasValueGte checks for inclusive minimum value'() {
+    def 'hasValueGte => entry if value < min'() {
         expect:
         v.hasValueGte(min,'val')(input) == ResultMap.from(results)
 
@@ -103,27 +126,34 @@ class CheckersTest extends Specification {
         min    | input   | results
         5      | 6       | [:]
         5      | 5       | [:]
-        5      | 4       | [val: [new val.Result('should not be less than 5', val.Result.CODE_ILLEGAL_VALUE)]]
+        5      | 4       | [val:[new val.Result('should not be less than 5',
+                                                val.Result.CODE_ILLEGAL_VALUE)]]
         'G'    | 'G'     | [:]
         'G'    | 'g'     | [:]
         'G'    | 'a'     | [:]
-        'G'    | 'A'     | [val: [new val.Result('should not be less than G', val.Result.CODE_ILLEGAL_VALUE)]]
+        'G'    | 'A'     | [val:[new val.Result('should not be less than G',
+                                                val.Result.CODE_ILLEGAL_VALUE)]]
     }
 
-    def 'hasValueLte checks for inclusive maximum value'() {
+    def 'hasValueLte => entry if value > max'() {
         expect:
-        v.hasValueLte(max,'val', 'should be less than max')(input) == ResultMap.from(results)
+        v.hasValueLte(max,'val', 'should be less than max')(input) ==
+            ResultMap.from(results)
 
         where:
         max        | input          | results
         5          | 4              | [:]
         5          | 5              | [:]
-        5          | 6              | [val: [new val.Result('should be less than max', val.Result.CODE_ILLEGAL_VALUE)]]
+        5          | 6              | [val: [
+                new val.Result('should be less than max',
+                               val.Result.CODE_ILLEGAL_VALUE)]]
         new Date() | new Date() - 1 | [:]
-        new Date() | new Date() + 1 | [val: [new val.Result('should be less than max', val.Result.CODE_ILLEGAL_VALUE)]]
+        new Date() | new Date() + 1 | [val: [
+                new val.Result('should be less than max',
+                               val.Result.CODE_ILLEGAL_VALUE)]]
     }
 
-    def 'isInstanceOf checks whether input extends type'() {
+    def 'isInstanceOf => entry if not of type'() {
         expect:
         v.isInstanceOf(type, 'type')(input) == ResultMap.from(results)
 
@@ -131,32 +161,44 @@ class CheckersTest extends Specification {
         input       | type         | results
         null        | String       | [:]
         'test'      | String       | [:]
-        "${'test'}" | String       | [type:[new val.Result('is not of type String', 'ILLEGAL_VALUE')]]
-        'test'      | Integer      | [type:[new val.Result('is not of type Integer', 'ILLEGAL_VALUE')]]
+        "${'test'}" | String       | [type:[
+                new val.Result('is not of type String', 'ILLEGAL_VALUE')]]
+        'test'      | Integer      | [type:[
+                new val.Result('is not of type Integer', 'ILLEGAL_VALUE')]]
         []          | Iterable     | [:]
         []          | ArrayList    | [:]
-        []          | Map          | [type:[new val.Result('is not of type Map', 'ILLEGAL_VALUE')]]
+        []          | Map          | [type:[
+                new val.Result('is not of type Map', 'ILLEGAL_VALUE')]]
     }
 
-    def 'isOneOf checks whether input is a member of the set of permitted values'() {
+    def 'isOneOf => entry if not in set'() {
         expect:
         v.isOneOf(allowed,'value')(input) == ResultMap.from(results)
 
         where:
         input         | allowed   | results
         'any'         | ['any']   | [:]
-        []            | ['any']   | [value:[new val.Result('is not one of allowed values: [any]', 'ILLEGAL_VALUE')]]
+        []            | ['any']   | [value:[
+                new val.Result('is not one of allowed values: [any]',
+                               'ILLEGAL_VALUE')]]
         [:]           | [[:]]     | [:]
         []            | [[]]      | [:]
-        []            | [['test']]| [value:[new val.Result('is not one of allowed values: [[test]]', 'ILLEGAL_VALUE')]]
-        'not'         | ['any']   | [value:[new val.Result('is not one of allowed values: [any]', 'ILLEGAL_VALUE')]]
-        1             | [2,4]     | [value:[new val.Result('is not one of allowed values: [2, 4]', 'ILLEGAL_VALUE')]]
+        []            | [['test']]| [value:[
+                new val.Result('is not one of allowed values: [[test]]',
+                               'ILLEGAL_VALUE')]]
+        'not'         | ['any']   | [value:[
+                new val.Result('is not one of allowed values: [any]',
+                               'ILLEGAL_VALUE')]]
+        1             | [2,4]     | [value:[
+                new val.Result('is not one of allowed values: [2, 4]',
+                               'ILLEGAL_VALUE')]]
         2             | [2,4]     | [:]
         null          | [null]    | [:]
     }
 
-    enum Test {A, B, C}  ///could use a standard enum but I don't know any off the top of my head
-    def 'isOneOf checks if input is valid value for enum'() {
+    ///could use a standard enum but I don't know any off the top of my head
+    enum Test {A, B, C}
+    def 'isOneOf => entry if not enum value'() {
         given:
         expect:
         v.isOneOf(Test, 'value')(input) == ResultMap.from(results)
@@ -166,11 +208,12 @@ class CheckersTest extends Specification {
         Test.A       | [:]
         'C'          | [:]
         null         | [:]
-        'D'          | [value:[new val.Result('should be one of [A, B, C]', 'ILLEGAL_VALUE')]]
+        'D'          | [value:[
+                new val.Result('should be one of [A, B, C]', 'ILLEGAL_VALUE')]]
         ''           | [:]
     }
 
-    def 'isNotNull ensures input is not null'() {
+    def 'isNotNull => entry if null'() {
         expect:
         v.isNotNull('required')(input) == ResultMap.from(results)
 
@@ -180,20 +223,25 @@ class CheckersTest extends Specification {
         ''        | [:]
         0         | [:]
         false     | [:]
-        null      | ['required':[new val.Result('required field cannot be null', 'REQUIRED_FIELD')]]
+        null      | ['required':[new val.Result('required field cannot be null',
+                                                'REQUIRED_FIELD')]]
     }
 
-    def 'isNull ensures input is null'() {
+    def 'isNull => entry if not null'() {
         expect:
         v.isNull('required')(input) == ResultMap.from(results)
 
         where:
         input     | results
         null      | [:]
-        'bad'     | ['required':[new val.Result('field must be null', 'ILLEGAL_VALUE')]]
-        ''        | ['required':[new val.Result('field must be null', 'ILLEGAL_VALUE')]]
-        0         | ['required':[new val.Result('field must be null', 'ILLEGAL_VALUE')]]
-        [:]       | ['required':[new val.Result('field must be null', 'ILLEGAL_VALUE')]]
+        'bad'     | ['required':[new val.Result('field must be null',
+                                                'ILLEGAL_VALUE')]]
+        ''        | ['required':[new val.Result('field must be null',
+                                                'ILLEGAL_VALUE')]]
+        0         | ['required':[new val.Result('field must be null',
+                                                'ILLEGAL_VALUE')]]
+        [:]       | ['required':[new val.Result('field must be null',
+                                                'ILLEGAL_VALUE')]]
     }
 
     def 'matchesRe checks whether value matches provided regular expression'() {
@@ -204,18 +252,34 @@ class CheckersTest extends Specification {
         input        | pattern   | results
         null         | /\d+/     | [:]
         '21'         | /\d+/     | [:]
-        ''           | /\d+/     | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
-        'a'          | /\d+/     | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
+        ''           | /\d+/     | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
+        'a'          | /\d+/     | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
         'yes'        | /y\w+/    | [:]
-        'other'      | /y\w+/    | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
-        'oyeah'      | /y\w+/    | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
+        'other'      | /y\w+/    | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
+        'oyeah'      | /y\w+/    | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
         123          | /\d+/     | [:]
-        123          | /y\w+/    | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
-        ['1']        | /\d+/     | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
+        123          | /y\w+/    | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
+        ['1']        | /\d+/     | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
         ['1']        | /.*\d.*/  | [:]
         [b:'12']     | /.*b.*/   | [:]
-        ['b']        | /\d+/     | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
-        ['yes']      | /y\w+/    | [value:[new val.Result('does not match required pattern', 'ILLEGAL_VALUE')]]
+        ['b']        | /\d+/     | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
+        ['yes']      | /y\w+/    | [value:[
+                new val.Result('does not match required pattern',
+                               'ILLEGAL_VALUE')]]
     }
 
     def 'pass returns passed'() {
@@ -223,9 +287,10 @@ class CheckersTest extends Specification {
         v.pass()('anything') == ResultMap.passed()
     }
 
-    def 'satisfies(test,key,message,code) returns ResultMap based on arguments if test(value) fails, else a passing ResultMap'() {
+    def 'satisfies(test,key,msg,code) => test?passed:ResultMap from args'() {
         expect:
-        v.satisfies({it}, 'invalid', 'uh oh', 'BAD_VALUE')(input) == ResultMap.from(expected)
+        v.satisfies({it}, 'invalid', 'uh oh', 'BAD_VALUE')(input) ==
+            ResultMap.from(expected)
 
         where:
         input     | expected
@@ -233,23 +298,28 @@ class CheckersTest extends Specification {
         false     | [invalid: [new val.Result('uh oh', 'BAD_VALUE')]]
     }
 
-    def 'satisfies(test,key,message,code) allows late bound GStrings to include info input in the result'() {
+    def 'satisfies(test,key,msg,code) expands GStrings late to access input'() {
         expect:
-        v.satisfies({it}, 'invalid', "$input is not truthy", 'BAD_VALUE')(input) == ResultMap.from(expected)
+        v.satisfies({it},
+                    'invalid', "$input is not truthy", 'BAD_VALUE')(input) ==
+            ResultMap.from(expected)
 
         where:
         input     | expected
         true      | [:]
-        false     | [invalid: [new val.Result('false is not truthy', 'BAD_VALUE')]]
+        false     | [invalid: [new val.Result('false is not truthy',
+                                              'BAD_VALUE')]]
         []        | [invalid: [new val.Result('[] is not truthy', 'BAD_VALUE')]]
     }
 
 
 
-    def 'satisfies(test, onFail) returns onFail result if test returns non-truthy, else a passing ResultMap'() {
+    def 'satisfies(test,onFail) returns onFail() if !test(), else passing'() {
         expect:
         v.satisfies({it},
-                {input -> ResultMap.from([fail:[new val.Result('fail', 'fail')]])})(input) == ResultMap.from(expected)
+                {input -> ResultMap.from(
+                        [fail:[new val.Result('fail', 'fail')]])})(input) ==
+            ResultMap.from(expected)
 
         where:
         input     | expected
@@ -273,15 +343,20 @@ class CheckersTest extends Specification {
 
         where:
         input    | results
-        null     | [test:[new val.Result('required field cannot be null', 'REQUIRED_FIELD'),
-                          new val.Result('is not one of allowed values: [a, b]', 'ILLEGAL_VALUE')]]
-        1        | [test:[new val.Result('is not of type String', 'ILLEGAL_VALUE'),
-                          new val.Result('is not one of allowed values: [a, b]', 'ILLEGAL_VALUE')]]
+        null     | [test:[new val.Result('required field cannot be null',
+                                         'REQUIRED_FIELD'),
+                          new val.Result('is not one of allowed values: [a, b]',
+                                         'ILLEGAL_VALUE')]]
+        1        | [test:[new val.Result('is not of type String',
+                                         'ILLEGAL_VALUE'),
+                          new val.Result('is not one of allowed values: [a, b]',
+                                         'ILLEGAL_VALUE')]]
         'a'      | [:]
-        'c'      | [test:[new val.Result('is not one of allowed values: [a, b]', 'ILLEGAL_VALUE')]]
+        'c'      | [test:[new val.Result('is not one of allowed values: [a, b]',
+                                         'ILLEGAL_VALUE')]]
     }
 
-    def 'and provides short circuiting behavior standard to most logical ands'() {
+    def 'and short circuits and returns first non-passing'() {
         given:
         def check = v.and(
                 v.isNotNull('test'),
@@ -293,13 +368,16 @@ class CheckersTest extends Specification {
 
         where:
         input    | results
-        null     | [test:[new val.Result('required field cannot be null', 'REQUIRED_FIELD')]]
-        1        | [test:[new val.Result('is not of type String', 'ILLEGAL_VALUE')]]
+        null     | [test:[new val.Result('required field cannot be null',
+                                         'REQUIRED_FIELD')]]
+        1        | [test:[new val.Result('is not of type String',
+                                         'ILLEGAL_VALUE')]]
         'a'      | [:]
-        'c'      | [test:[new val.Result('is not one of allowed values: [a, b]', 'ILLEGAL_VALUE')]]
+        'c'      | [test:[new val.Result('is not one of allowed values: [a, b]',
+                                         'ILLEGAL_VALUE')]]
     }
 
-    def 'or provides short circuiting behavior standard to most logical ors or returns aggregated results'() {
+    def 'or short circuits or returns last result'() {
         given:
         def check = v.or(
                 v.isInstanceOf(String, 'test'),
@@ -313,7 +391,8 @@ class CheckersTest extends Specification {
         null     | [:]
         1        | [:]
         'a'      | [:]
-        []       | [test:[new val.Result('is not of type Integer', 'ILLEGAL_VALUE')]]
+        []       | [test:[new val.Result('is not of type Integer',
+                                         'ILLEGAL_VALUE')]]
     }
 
     //
@@ -321,7 +400,8 @@ class CheckersTest extends Specification {
     //
     def 'when evaluates bodyCheck if testCheck passes'() {
         given:
-        def check = v.when(v.isInstanceOf(Collection, 'test'), v.hasSizeLte(5, 'test'))
+        def check = v.when(v.isInstanceOf(Collection, 'test'),
+                           v.hasSizeLte(5, 'test'))
 
         expect:
         check(input) == ResultMap.from(results)
@@ -331,12 +411,14 @@ class CheckersTest extends Specification {
         null           | [:]
         '1234567'      | [:]
         [1,2,3,4,5]    | [:]
-        [1,2,3,4,5,6]  | ['test':[new val.Result('should be no longer than 5', 'TOO_LONG')]]
+        [1,2,3,4,5,6]  | ['test':[new val.Result('should be no longer than 5',
+                                                 'TOO_LONG')]]
     }
 
     def 'unless evaluates bodyCheck if testCheck does not pass'() {
         given:
-        def check = v.unless(v.isInstanceOf(Collection, 'test'), v.hasSizeLte(5, 'test'))
+        def check = v.unless(v.isInstanceOf(Collection, 'test'),
+                             v.hasSizeLte(5, 'test'))
 
         expect:
         check(input) == ResultMap.from(results)
@@ -345,7 +427,8 @@ class CheckersTest extends Specification {
         input          | results
         null           | [:]
         '12345'        | [:]
-        '1234567'      | ['test':[new val.Result('should be no longer than 5', 'TOO_LONG')]]
+        '1234567'      | ['test':[new val.Result('should be no longer than 5',
+                                                 'TOO_LONG')]]
         [1,2,3,4,5,6]  | [:]
     }
 
@@ -357,8 +440,9 @@ class CheckersTest extends Specification {
         input     | expected
         1         | [:]
         []        | [:]
-        '1'       | [not: [new Result('condition satisfied which should not have been', 'NEGATED_CHECK')]]
-
+        '1'       | [not: [
+                new Result('condition satisfied which should not have been',
+                           'NEGATED_CHECK')]]
     }
 
 }

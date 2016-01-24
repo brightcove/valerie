@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 class ResultMapTest extends Specification {
 
-    def 'references to passed/empty ResultMaps will share the same object in memory'() {
+    def 'passed/empty ResultMaps will reference the same instance'() {
         expect:
         ResultMap.from([:]).is(ResultMap.from([:]))
         ResultMap.from([:]).is(ResultMap.passed())

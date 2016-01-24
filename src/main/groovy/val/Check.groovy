@@ -4,7 +4,7 @@ import groovy.transform.InheritConstructors
 import groovy.transform.PackageScope
 
 /**
- * A function which will evaluate an input value and return the output ResultMap.
+ * A function evaluates input and returns the ResultMap output.
  *
  * This is the core class in the library, representing the underlying concept of
  * constructing/defining a reusable and declarative function which will

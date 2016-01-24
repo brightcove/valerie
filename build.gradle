@@ -1,11 +1,10 @@
 plugins {
+    id 'groovy'
+    id 'maven-publish'
+    id 'codenarc'
     id 'net.researchgate.release' version '2.2.2'
     id "com.jfrog.bintray" version "1.4"
 }
-
-apply plugin: 'idea'
-apply plugin: 'groovy'
-apply plugin: 'maven-publish'
 
 repositories {
     jcenter()
@@ -39,28 +38,30 @@ publishing {
 }
 
 bintray {
-  user = System.getenv('BINTRAY_USER')
-  key = System.getenv('BINTRAY_KEY')
-  publications = ['MainPublication']
-  publish = true
-  pkg {
-    repo = 'valerie'
-    name = 'valerie'
-    userOrg = 'brightcove'
-    desc = project.description
-    websiteUrl = 'https://github.com/brightcove/valerie'
-    issueTrackerUrl = 'https://github.com/brightcove/valerie/issues'
-    vcsUrl = 'https://github.com/brightcove/valerie.git'
-    licenses = ['Apache-2.0']
-    version {
-      name = project.version
-      released = new Date()
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+    publications = ['MainPublication']
+    publish = true
+    pkg {
+        repo = 'valerie'
+        name = 'valerie'
+        userOrg = 'brightcove'
+        desc = project.description
+        websiteUrl = 'https://github.com/brightcove/valerie'
+        issueTrackerUrl = 'https://github.com/brightcove/valerie/issues'
+        vcsUrl = 'https://github.com/brightcove/valerie.git'
+        licenses = ['Apache-2.0']
+        version {
+            name = project.version
+            released = new Date()
+        }
     }
-  }
 }
 
 bintrayUpload.onlyIf{
     !(version ==~ /.*SNAPSHOT/)
 }
 
-wrapper.gradleVersion = '2.9'
+codenarc.config = resources.text.fromFile('config/codenarc/codenarc.groovy')
+
+wrapper.gradleVersion = '2.10'

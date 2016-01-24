@@ -68,7 +68,7 @@ class Idator implements Check {
     }
 
     /**
-     * @deprecated 0.4.0: prefer constructor followed by define
+     * @deprecated 0.4.0: prefer constructor followed by using
      */
     @Deprecated
     public Idator(Checkers checkers, Map stashed, String key,
@@ -119,14 +119,11 @@ class Idator implements Check {
     }
 
     /**
-     * Define Checks for one or more children/successors nodes of the input
-     * graph.
-     * Each key is the name of the child and each value will serve as a
-     * Definition for that child.
+     * Define Checks for one or more input graph children/successors nodes
+     * Each key is the child name and each value is the respective Definition
      *
      * This provides a natural way to define Checks against the children which
-     * can then be aggregated together into
-     * a declarative Definition such as
+     * can then be aggregated together into a declarative Definition such as.
      * <pre>
      * define id: { isNotNull() }
      * define name: {
@@ -134,8 +131,7 @@ class Idator implements Check {
      *             last: { isNotNull() & isInstanceOf(String) }
      * }
      * </pre>
-     * This uses withValue internally and so will have similar behavior in
-     * regards to configuring the key
+     * This uses withValue internally.
      * @param entries A Map of (child name):definition
      */
     void define(Map<String, Closure> entries) {
@@ -187,6 +183,11 @@ class Idator implements Check {
     void require(Check check) {
         requiredChecks << check
     }
+
+    /**
+     * require analog for define Map syntax.
+     * See require(Check) and define(Map) for further information
+     */
     void require(Map<String, Closure> entries) {
         entries.each{k,v->
             require(withValue(k, v))
