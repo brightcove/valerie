@@ -5,20 +5,25 @@ import spock.lang.Specification
 class IdatorTest extends Specification {
     def checkers = new val.Checkers()
 
-    def 'usign creates Check out of definition'() {
+    def 'using creates Check out of definition'() {
+        given:
+        Check check = new Idator(checkers, [:], 'key').using{ isNotNull() }
+
         expect:
-        new Idator(checkers, [:], 'key').using{ isNotNull() }(null) ==
-                val.ResultMap.from(
-                    [key: [new val.Result('required field cannot be null',
-                                          val.Result.CODE_REQUIRED_FIELD)]])
+        check(null) == val.ResultMap.from(
+            [key: [new val.Result('required field cannot be null',
+                                  val.Result.CODE_REQUIRED_FIELD)]])
     }
 
     def 'define allows checks to be `all`ed using provided key by default'() {
-        expect:
-        new Idator(checkers, [:], 'key').using{
+        given:
+        Check check = new Idator(checkers, [:], 'key').using{
             define isInstanceOf(Collection)
             define isInstanceOf(String)
-        }(1) == val.ResultMap.from(
+        }
+
+        expect:
+        check(1) == val.ResultMap.from(
             [ key: [new val.Result('is not of type Collection',
                                    val.Result.CODE_ILLEGAL_VALUE),
                     new val.Result('is not of type String',
@@ -26,12 +31,15 @@ class IdatorTest extends Specification {
     }
 
     def 'a return value Check of a definition is defined implicitly'() {
-        expect:
-        new Idator(checkers, [:], 'key').using{
+        given:
+        Check check = new Idator(checkers, [:], 'key').using{
             define isInstanceOf(Map)
-            isInstanceOf(Collection)  //This one will be ignored
+            isInstanceOf(Collection) //This one will be ignored
             isInstanceOf(String)
-        }(1) == val.ResultMap.from(
+        }
+
+        expect:
+        check(1) == val.ResultMap.from(
             [ key: [new val.Result('is not of type Map',
                                    val.Result.CODE_ILLEGAL_VALUE),
                     new val.Result('is not of type String',
@@ -39,11 +47,15 @@ class IdatorTest extends Specification {
     }
 
     def 'the default key for the current definition is set with resultKey'() {
-        expect:
-        new Idator(checkers, [:], 'key').using{
+        given:
+        Check check = new Idator(checkers, [:], 'key').using {
             resultKey = 'updated'
             define isInstanceOf(Collection)
-            define isInstanceOf(String)}(1) == val.ResultMap.from(
+            define isInstanceOf(String)
+        }
+
+        expect:
+        check(1) == val.ResultMap.from(
                 [ updated: [new val.Result('is not of type Collection',
                                            val.Result.CODE_ILLEGAL_VALUE),
                             new val.Result('is not of type String',
@@ -107,9 +119,10 @@ class IdatorTest extends Specification {
         def check = new Idator(checkers, [:], 'root').using{
             stashValueAs 'top'
             define child2: {
-                satisfies({ input ->
-                    input == stashed.top.child1
-                }, 'wrong', 'do not match', 'MISMATCH')
+                satisfies(key:'wrong',
+                    msg:'do not match',code:'MISMATCH'){ input ->
+                        input == stashed.top.child1
+                }
             }
         }
 
@@ -287,7 +300,7 @@ class IdatorTest extends Specification {
 
     def 'define loads an initial validation scope'() {
         given:
-        def definedCheck = new val.Idator().using{isNotNull('test')}
+        def definedCheck = new val.Idator().using{isNotNull(key:'test')}
 
         expect:
         definedCheck(null).asMap().containsKey('test')

@@ -17,239 +17,201 @@ import java.util.regex.Pattern
 class Checkers {
 
     /**
+     * Return a passing ResultMap.
+     * @return Check that returns ResultMap.passed()
+     */
+    Check pass() {
+        { input -> ResultMap.passed() }
+    }
+
+    /**
      * Return ResultMap constructed from provided arguments
-     * @param key Key for Result
-     * @param message Message for Result
-     * @param code Code for Result
+     * @param mold Mold for ResultMap
      * @return Check which will return ResultMap with constructed Result
      */
-    Check fail(key = 'fail',
-               message = 'failed because you said so',
-               code = val.Result.CODE_ILLEGAL_VALUE) {
-        {input -> ResultMap.from((key): [new Result(message, code)])}
+    Check fail(Map mold=[:]) {
+        mold = [key:'fail',
+                msg:'failed because you said so',
+                code:Result.CODE_ILLEGAL_VALUE] + mold
+        {input -> ResultMap.from((mold.key): [new Result(mold.msg, mold.code)])}
     }
 
     /**
-     * Validate that the input contains a member with the specified name,
-     * regardless of value
+     * Validate that the input contains `member` (regardless of value)
      * @param member The name of the member that input should contain
-     * @param key Key for Result if member does not exist
-     * @param message Message for Result if member does not exist
-     * @param code Code for Result if member does not exist
+     * @param mold Mold for ResultMap if member does not exist
      * @return Check to validate that input contains specified member
      */
-    Check hasMember(String member,
-                    key,
-                    message = "required field ${member} is not present",
-                    code = val.Result.CODE_REQUIRED_FIELD) {
-        satisfies({input ->
-            input?.containsKey(member)
-        }, key, message, code)
+    Check hasMember(Map mold=[:], String member) {
+        mold = [msg:"required field ${member} is not present",
+                code:Result.CODE_REQUIRED_FIELD] + mold
+        satisfies(mold) { input -> input?.containsKey(member) }
     }
 
     /**
-     * Validates that map only contains fields that are in the Set of fields
-     * provided
-     * @param fields Set of field names from which input fields should be
-     * members
-     * @param key Key prefix which will have input field name appended (`.`
-     * separated) if input field is not in fields
-     * @param message Message for Result for each field not present in fields
-     * @param code Code for Result for each field not present in fields
+     * Validates that map only contains members that are in fields
+     * @param fields Set of field names allowed in input
+     * @param mold Mold for ResultMap for input members not in fields
+     * key will serve as a prefix which will have .${input field name} appended
+     * if key is not provided then only the input field name will be used
      * @return Check which will validate field membership
      */
-    Check hasOnlyFieldsIn(Set<String> fields,
-                          key,
-                          message = 'field is unknown',
-                          code = val.Result.CODE_ILLEGAL_FIELD) {
+    Check hasOnlyFieldsIn(Map mold=[:], Set<String> fields) {
+        mold = [msg:'field is unknown',
+                code:Result.CODE_ILLEGAL_FIELD] + mold
         { input ->
             if (!(input instanceof Map))
-                return val.ResultMap.from(
-                (key): [new val.Result('only maps are supported',
+                return ResultMap.from(
+                    (key): [new Result('only maps are supported',
                                        'ILLEGAL_VALUE')])
             Map collectedResults = [:]
             ((Map) input).keySet().each{ fieldName ->
                 if (!fields.contains(fieldName)) {
-                    collectedResults["${key?key+'.':''}${fieldName}"] =
-                        [new val.Result(message, code)]
+                    String prefix = mold.key ? "${mold.key}." : ''
+                    collectedResults."${prefix}${fieldName}" =
+                        [new Result(mold.msg, mold.code)]
                 }
             }
-            val.ResultMap.from(collectedResults)
+            ResultMap.from(collectedResults)
         }
     }
 
     /**
-     * Validates that map only contains fields that are declared for the Class
-     * provided
-     * @param targetClass Class whose delcared fields will become the Set of
-     * valid fields
-     * @param key Key prefix which will have input field name appended
-     * (`.` separated)
-     * if input field is not valid for targetClass
-     * @param message Message for Result for each invalid field for targetClass
-     * @param code Code for Result for each field not valid for targetClass
+     * Validates that map only contains fields declared in targetClass
+     * @param targetClass Class whose fields will become the Set of valid fields
+     * @param mold Mold for ResultMap for input members not in fields
+     * key will serve as a prefix which will have .${input field name} appended
+     * if key is not provided then only the input field name will be used
      * @return Check which will validate field membership
      */
-    Check hasOnlyFieldsIn(Class targetClass,
-                          key,
-                          message = 'field is unknown',
-                          code = val.Result.CODE_ILLEGAL_FIELD) {
-        hasOnlyFieldsIn(new HashSet<>(targetClass.getDeclaredFields()*.name),
-                        key, message, code)
+    Check hasOnlyFieldsIn(Map mold=[:], Class targetClass) {
+        mold = [msg:'field is unknown',
+                code:Result.CODE_ILLEGAL_FIELD] + mold
+        hasOnlyFieldsIn(mold,
+                        targetClass.getDeclaredFields()*.name as Set)
     }
 
     /**
      * Validate that the size of input is >= (gte) the min size.
      * Uses Groovy size duckiness
      * @param min Minimum (inclusive) size for input
-     * @param key Key for Result if input is smaller than min
-     * @param message Message for Result if input is smaller than min
-     * @param code Code for Result if input is smaller than min
+     * @param mold Mold for ResultMap when size is less than min
      * @return Check to validate input has size greater than or equal to min
      */
-    Check hasSizeGte(Integer min,
-                     key,
-                     message = "should be on least ${min} long",
-                     code = val.Result.CODE_TOO_SHORT) {
-        satisfies({input ->
-            input == null || input?.size() >= min}, key, message, code)
+    Check hasSizeGte(Map mold=[:], Integer min) {
+        mold = [msg: "should be at least ${min} long",
+                code: Result.CODE_TOO_SHORT] + mold
+        satisfies(mold) { input ->
+            input == null || input?.size() >= min
+        }
     }
 
     /**
      * Validate that the size of input is <= (lte) the max size.
      * Uses Groovy size duckiness
      * @param max Maximum (inclusive) size for input
-     * @param key Key for Result if input is larger than max
-     * @param message Message for Result if input is larger than max
-     * @param code Code for Result if value is input than max
+     * @param mold Mold for ResultMap if value is input than max
      * @return Check to validate that input has a size less than or equal to max
      */
-    Check hasSizeLte(Integer max,
-                     key,
-                     message = "should be no longer than ${max}",
-                     code = val.Result.CODE_TOO_LONG) {
-        satisfies({input ->
-            input?.size() <= max}, key, message, code)
+    Check hasSizeLte(Map mold=[:], Integer max) {
+        mold = [msg:"should be no longer than ${max}",
+                code:Result.CODE_TOO_LONG] + mold
+        satisfies(mold) { input -> input?.size() <= max }
     }
 
     /**
      * Validate that the value of input is >= (gte) min
      * @param min Minimum (inclusive) value for input
-     * @param key Key for Result if input is less than min
-     * @param message Message for Result if input is less than min
-     * @param code Code for Result if input is less than min
+     * @param mold Mold for ResultMap if input is less than min
      * @return Check to validate input has value greater than or equal to min
      */
-    Check hasValueGte(Object min,
-                      key,
-                      message = "should not be less than ${min}",
-                      code = val.Result.CODE_ILLEGAL_VALUE) {
-        satisfies({input ->
-            input == null || input >= min}, key, message, code)
+    Check hasValueGte(Map mold=[:], Object min) {
+        mold = [msg:"should not be less than ${min}",
+                code:Result.CODE_ILLEGAL_VALUE] + mold
+        satisfies(mold) { input ->
+            input == null || input >= min
+        }
     }
 
     /**
      * Validate that the value of input is <= (lte) max
      * @param max Maximum (inclusive) value for input
-     * @param key Key for Result if input is greater than max
-     * @param message Message for Result if input is greater than max
-     * @param code Code for Result if input is greater than max
+     * @param mold Mold for ResultMap if input is greater than max
      * @return Check to validate input has a value less than or equal to max
      */
-    Check hasValueLte(Object max,
-                      key,
-                      message = "should not be greater than ${max}",
-                      code = val.Result.CODE_ILLEGAL_VALUE) {
-        satisfies({input ->
-            input == null || input <= max}, key, message, code)
+    Check hasValueLte(Map mold=[:], Object max) {
+        mold = [msg:"should not be greater than ${max}",
+                code:Result.CODE_ILLEGAL_VALUE] + mold
+        satisfies(mold) { input ->
+            input == null || input <= max
+        }
     }
 
     /**
      * Validate that input is an instance of the provided type
      * @param type Type that input should be/implement/extend
-     * @param key Key for Result if input is not an instance of type
-     * @param message Message for Result if input is not an instance of type
-     * @param code Code for Result if input is not an instance of type
+     * @param mold Mold for ResultMap if input is not a type instance
      * @return Check to validate that input is an instance of type
      */
-    Check isInstanceOf(Class<?> type,
-                       key,
-                       message = "is not of type ${type.simpleName}",
-                       code = val.Result.CODE_ILLEGAL_VALUE) {
-        satisfies({input ->
-            input == null || type.isInstance(input) }, key, message, code)
+    Check isInstanceOf(Map mold=[:], Class<?> type) {
+        mold = [msg:"is not of type ${type.simpleName}",
+                code:Result.CODE_ILLEGAL_VALUE] + mold
+        satisfies(mold) {input ->
+            input == null || type.isInstance(input)
+        }
     }
 
     /**
      * Validate that input is one of the set of allowed values provided.
      * @param allowed The set of allowed values in which input must belong
-     * @param key Key for Result if input is not one of the allowed values
-     * @param message Message for Result if input is not an allowed value
-     * @param code Code for Result if input is not one of the allowed values
+     * @param mold Mold for ResultMap if input is not in allowed
      * @return Check to validate that input is a member of the allowed set
      */
-    Check isOneOf(Collection allowed,
-                  key,
-                  message = "is not one of allowed values: ${allowed}",
-                  code = val.Result.CODE_ILLEGAL_VALUE) {
+    Check isOneOf(Map mold=[:], Collection allowed) {
+        mold = [msg:"is not one of allowed values: ${allowed}",
+        code:Result.CODE_ILLEGAL_VALUE] + mold
         Set allowedSet = allowed as Set
-        satisfies({input ->
-            allowedSet.contains(input)}, key, message, code)
+        satisfies(mold) { input ->
+            allowedSet.contains(input)
+        }
     }
 
     /**
-     * Validate that input is of type enumClass or is one of the possible
-     * values for enumClass
+     * Validate that input is a possible value for enumClass
      * @param enumClass Enum class for which input must be a valid value
-     * @param key Key for Result if input is not a valid value for enumClass
-     * @param message Message for result if input is invalid value for enumClass
-     * @param code Code for Result if input is not a valid value for enumClass
+     * @param mold Mold for Result if input is not in enumClass
      * @return Check to validate that input is a possible value for enumClass
      */
-    Check isOneOf(Class<? extends Enum> enumClass,
-                  key,
-                  message = "should be one of ${EnumSet.allOf(enumClass)}",
-                  code = val.Result.CODE_ILLEGAL_VALUE) {
-        satisfies({input ->
-            if (!input || enumClass.isInstance(input)) return true
-            try {
-                Enum.valueOf(enumClass, input)
-                true
-            }
-            catch (IllegalArgumentException ex) {
-                false
-            }
-        }, key, message, code)
+    Check isOneOf(Map mold=[:], Class<? extends Enum> enumClass) {
+        //Support enum references and String representations
+        Set<Enum> enums = EnumSet.allOf(enumClass)
+        Set strings = enums*.toString()
+        isOneOf([msg:"is not one of allowed values: ${strings}"]+mold,
+                strings + enums)
     }
 
     /**
      * Validate that input is not null
-     * @param key Key under which Result will be added if input is null
-     * @param message Message for Result if input is null
-     * @param code Code for Result if input is null
+     * @param mold Mold for ResultMap when input is null
      * @return Check to validate that input is not null
      */
-    Check isNotNull(key,
-                    message = "required field cannot be null",
-                    code = val.Result.CODE_REQUIRED_FIELD) {
-        satisfies({input ->
-            input != null }, key, message, code)
+    Check isNotNull(Map mold=[:]) {
+        mold = [msg:'required field cannot be null',
+                code:Result.CODE_REQUIRED_FIELD] + mold
+        satisfies(mold) { input -> input != null }
     }
 
     /**
      * Validate that input is null
      * This Check is not expected to be widely useful outside of things like
      * branching and may be replaced by something more general such as isEmpty
-     * @param key Key under which Result will be added if input is not null
-     * @param message Message for Result if input is not null
-     * @param code Code for Result if input is not null
+     * @param mold Mold used to create ResultMap when !null
      * @return Check to validate that input is null
      */
-    Check isNull(key,
-                 message = "field must be null",
-                 code = val.Result.CODE_ILLEGAL_VALUE) {
-        satisfies({input ->
-            input == null }, key, message, code)
+    Check isNull(Map mold=[:]) {
+        mold = [msg:'field must be null',
+                code:Result.CODE_ILLEGAL_VALUE] + mold
+        satisfies(mold) { input -> input == null }
     }
 
     /**
@@ -259,27 +221,15 @@ class Checkers {
      * This will match using implicit stringifying (toString)
      * so things like arrays _could_ be tested (but probably shouldn't)
      * @param pattern String representation of regular expression to match
-     * @param key Key for Result if input does not match regular expression
-     * @param message Message for Result if input does not match regex
-     * @param code Code for Result if input does not match regular expression
-     * @return Check to validate that stringified input matches regex
+     * @param mold Mold for ResultMap if input does not match
      */
-    Check matchesRe(String pattern,
-                    key,
-                    message = "does not match required pattern",
-                    code = val.Result.CODE_ILLEGAL_VALUE) {
+    Check matchesRe(Map mold=[:], String pattern) {
+        mold = [msg:'does not match required pattern',
+                code:Result.CODE_ILLEGAL_VALUE] + mold
         Pattern regex = ~pattern
-        satisfies({input ->
-            input == null || input.toString().matches(regex) },
-                  key, message, code)
-    }
-
-    /**
-     * Return a passing ResultMap.
-     * @return Check that returns ResultMap.passed()
-     */
-    Check pass() {
-        { input -> ResultMap.passed() }
+        satisfies(mold) { input ->
+            input == null || input.toString().matches(regex)
+        }
     }
 
     //
@@ -291,19 +241,16 @@ class Checkers {
      * having message and code
      * @param test Closure which accepts the input and returns a Boolean to
      * determine whether to call onFail
-     * @param key Key for Result if test(input) is false
-     * @param message Message for Result if test(input) is false
-     * @param code Code for Result if test(input) is false
-     * @return Check to evaluate input
+     * @param mold Mold used to create ResultMap when !test
      */
-    Check satisfies(Closure<Boolean> test,
-                    key,
-                    message,
-                    code) {
-        satisfies(test, { input ->
-            ResultMap.from([ (key.toString()):[new Result(message.toString(),
-                                                          code.toString())] ])
-                  })
+    Check satisfies(Map mold=[:], Closure<Boolean> test) {
+        satisfies(test) { input ->
+            if (!mold.key)
+                throw new NullPointerException('key must be provided');
+            ResultMap.from( (mold.key.toString()):
+                            [new Result(mold.msg.toString(),
+                                        mold.code.toString())] )
+        }
     }
 
     /**
@@ -318,8 +265,7 @@ class Checkers {
      */
     Check satisfies(Closure<Boolean> test,
                     Closure<ResultMap> onFail) {
-        { input ->
-            test(input) ? ResultMap.passed() : onFail(input) }
+        { input -> test(input) ? ResultMap.passed() : onFail(input) }
     }
 
     //
@@ -408,20 +354,18 @@ class Checkers {
      * (when(check, fail()))
      * This is oriented towards use in testChecks as part of when/unless/etc.
      * @param check Check for which the Result will be inverted
-     * @param key Key for Result if inner Check originally passed
-     * @param message Message for Result if inner Check passed
-     * @param code Code for Result if inner Check passed
+     * @param mold Mold for ResultMap if inner Check passed
      * @return Check to evaluate and invert result
      */
-    Check not(Check check,
-              key='not',
-              message='condition satisfied which should not have been',
-              code='NEGATED_CHECK') {
+    Check not(Map mold=[:], Check check) {
+      mold = [key:'not',
+              msg:'condition satisfied which should not have been',
+              code:'NEGATED_CHECK'] + mold
         { input ->
-            check(input) == ResultMap.passed() ?
-        ResultMap.from([(key.toString()): [new Result(message.toString(),
-                                                      code.toString())]])
-        : ResultMap.passed() }
+            check(input) == ResultMap.passed() ? ResultMap.from(
+              [(mold.key.toString()): [new Result(mold.msg.toString(),
+                                                  mold.code.toString())]])
+                                               : ResultMap.passed() }
     }
 
 }
