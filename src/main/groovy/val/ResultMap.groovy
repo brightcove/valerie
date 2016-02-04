@@ -2,7 +2,8 @@ package val
 
 /**
  * A collection of all {@link Result}s returned by evaluating a Checkers
- * This is effectively a Map where the key is an identifier for the result (normally the field being checked)
+ * This is effectively a Map where the key is an identifier for the result
+ * (normally the field being checked)
  * and the value is the list of all of the {@link Result}s for that key.
  *
  * If the map is empty then the checks have nothing to say (everything passed).
@@ -11,8 +12,10 @@ package val
 class ResultMap {
     private final Map<String, List<Result>> values
 
-    //The vast majority/all of the values will normally be equal to this, so a flyweight is used
-    //This behavior should not be considered part of the exposed API or relied on in any client code
+    //The vast majority/all of the values will normally be equal to this, so a
+    // flyweight is used
+    //This behavior should not be considered part of the exposed API or relied
+    // on in any client code
     final static ResultMap PASSED = new ResultMap([:])
 
     /**
@@ -26,7 +29,7 @@ class ResultMap {
     /**
      * Retrieve a ResultMap containing the entries in the provided Map.
      * This is the standard way of retrieving a ResultMap
-     * @param map A Map with entries where the keys are groupings (normally fields)
+     * @param map A Map with entries where the keys are groupings
      * and the values are the list of Results
      * @return A ResultMap with the entries provided
      */
@@ -35,7 +38,8 @@ class ResultMap {
         new ResultMap(map)
     }
 
-    //Hide the default constructor to allow avoiding instantiation and allow flyweight style optimizations
+    //Hide the default constructor to allow avoiding instantiation and allow
+    // flyweight style optimizations
     private ResultMap(Map<String, List<Result>> pValues) {
         this.values = new HashMap<>(pValues)
     }
@@ -51,7 +55,7 @@ class ResultMap {
     /**
      * Return a ResultMap which contains the merged result of the entries of
      * this ResultMap and the one passed as an argument
-     * @param right The ResultMap whose entries will be merged with those of this ResultMap
+     * @param right The ResultMap to be merged with this ResultMap
      * @return a ResultMap containing the merged entries of this and right
      */
     ResultMap plus(ResultMap right) {
@@ -64,7 +68,7 @@ class ResultMap {
         return new ResultMap(merged)
     }
 
-    //Groovy magic wasn't working consistently so these methods are created explicitly
+    //Groovy magic wasn't working consistently so these methods are explicit
     @Override
     boolean equals(Object obj) {
         return obj instanceof ResultMap && this.values == obj.values
