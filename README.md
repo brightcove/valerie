@@ -30,9 +30,9 @@ validation in terms of your model) is a very good one as it provides
 many conveniences, is generally DRY'er, and can highlight the role of
 the model in the code.  There are times, however, when this approach
 becomes overly-restrictive. Some examples may include:
- * providing richer feedback to less defined or variable user input
+ * providing richer feedback to less defined or more widely varying user input
  * allowing the model to evolve cleanly while migrating the API to that model
- * separating the read/query model from the write/command model (CQRS)
+ * separating the read/query model from the write/command model (CQRS) or validating partial representations/patches for domain objects
 
 ### Installation
 Valerie is available for download from jCenter. It is presently not
