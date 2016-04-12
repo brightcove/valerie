@@ -354,59 +354,59 @@ class Idator implements Check {
     /**
      * {@link val.Checkers#hasMember} passing the key for this instance
      */
-    Check hasMember(String field) {
-        checkers.hasMember(field, resultKey) }
+    Check hasMember(Map mold=[:], String field) {
+        checkers.hasMember([key:resultKey]+mold, field) }
     /**
      * {@link val.Checkers#hasOnlyFieldsIn} passing the key for this instance
      */
-    Check hasOnlyFieldsIn(Class targetClass) {
-        checkers.hasOnlyFieldsIn(targetClass, resultKey)
+    Check hasOnlyFieldsIn(Map mold=[:], Class targetClass) {
+        checkers.hasOnlyFieldsIn([key:resultKey]+mold, targetClass)
     }
     /**
      * (@link val.Checkers#hasSizeGte} passing the key for this instance
      */
-    Check hasSizeGte(Integer min) {
-        checkers.hasSizeGte(min, resultKey) }
+    Check hasSizeGte(Map mold=[:], Integer min) {
+        checkers.hasSizeGte([key:resultKey]+mold, min) }
     /**
      * {@link val.Checkers#hasSizeLte} passing the key for this instance
      */
-    Check hasSizeLte(Integer max) {
-        checkers.hasSizeLte(max, resultKey) }
+    Check hasSizeLte(Map mold=[:], Integer max) {
+        checkers.hasSizeLte([key:resultKey]+mold, max) }
     /**
      * {@link val.Checkers#hasValueGte} passing the key for this instance
      */
-    Check hasValueGte(Integer max) {
-        checkers.hasValueGte(max, resultKey) }
+    Check hasValueGte(Map mold=[:], Integer max) {
+        checkers.hasValueGte([key:resultKey]+mold, max) }
     /**
      * {@link val.Checkers#hasValueLte} passing the key for this instance
      */
-    Check hasValueLte(Integer max) {
-        checkers.hasValueLte(max, resultKey) }
+    Check hasValueLte(Map mold=[:], Integer max) {
+        checkers.hasValueLte([key:resultKey]+mold, max) }
     /**
      * {@link val.Checkers#isNotNull} passing the key for this instance
      */
-    Check isNotNull() {
-        checkers.isNotNull(resultKey) }
+    Check isNotNull(Map mold=[:]) {
+        checkers.isNotNull([key:resultKey]+mold) }
     /**
      * {@link val.Checkers#isNull} passing the key for this instance
      */
-    Check isNull() {
-        checkers.isNull(resultKey) }
+    Check isNull(Map mold=[:]) {
+        checkers.isNull([key:resultKey]+mold) }
     /**
      * {@link val.Checkers#isOneOf} passing the key for this instance
      */
-    Check isOneOf(Class<? extends Enum> type) {
-        checkers.isOneOf(type, resultKey) }
+    Check isOneOf(Map mold=[:], Class<? extends Enum> type) {
+        checkers.isOneOf([key:resultKey]+mold, type) }
     /**
      * {@link val.Checkers#isInstanceOf} passing the key for this instance
      */
-    Check isInstanceOf(Class<?> type) {
-        checkers.isInstanceOf(type, resultKey) }
+    Check isInstanceOf(Map mold=[:], Class<?> type) {
+        checkers.isInstanceOf([key:resultKey]+mold, type) }
     /**
      * {@link val.Checkers#matchesRe} passing the key for this instance
      */
-    Check matchesRe(String pattern) {
-        checkers.matchesRe(pattern, resultKey) }
+    Check matchesRe(Map mold=[:], String pattern) {
+        checkers.matchesRe([key:resultKey]+mold, pattern) }
     /**
      * Alias for {@link val.Checkers#pass} to provide a more readable default
      * clause in a {@link #cond}
@@ -417,8 +417,7 @@ class Idator implements Check {
     /**
      * Convenience delegation for use of Check in when/cond, etc.
      */
-    Check satisfies(Closure test) {
-        checkers.satisfies(test, resultKey, 'Invalid input',
-                           Result.CODE_ILLEGAL_VALUE)
+    Check satisfies(Map mold=[:], Closure test) {
+        checkers.satisfies([key:resultKey]+mold, test)
     }
 }

@@ -1,5 +1,7 @@
 package val
 
+import groovy.transform.ToString
+
 /**
  * A collection of all {@link Result}s returned by evaluating a Checkers
  * This is effectively a Map where the key is an identifier for the result
@@ -77,5 +79,10 @@ class ResultMap {
     @Override
     int hashCode() {
         return values.hashCode()
+    }
+
+    @Override
+    String toString() {
+        return "ResultMap:${values}"
     }
 }

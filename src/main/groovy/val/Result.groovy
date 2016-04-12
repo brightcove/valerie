@@ -16,7 +16,7 @@ class Result {
     /**
      * Human readable information about this result
      */
-    String message
+    String msg
 
     /**
      * Terser, machine-friendly information about this result
