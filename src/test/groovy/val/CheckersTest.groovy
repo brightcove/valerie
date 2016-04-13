@@ -38,6 +38,16 @@ class CheckersTest extends Specification {
                                val.Result.CODE_REQUIRED_FIELD)]]
     }
 
+    def 'hasOnlyFieldsIn => ILLEGAL_VALUE if not map'() {
+        given:
+        Check check = v.hasOnlyFieldsIn(['a','b','c'] as Set)
+
+        expect:
+        check('invalid', ctx) == ResultMap.from(
+                [(null): [new Result('only maps are supported',
+                        'ILLEGAL_VALUE')]])
+    }
+
     def 'hasOnlyFieldsIn => entry for each field not in set'() {
         given:
         Check check = v.hasOnlyFieldsIn(['a','b','c'] as Set)
