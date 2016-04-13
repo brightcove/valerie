@@ -6,18 +6,19 @@ import spock.lang.Unroll
 class CheckersTest extends Specification {
 
     def v = new Checkers()
+    EvalContext ctx = new EvalContext()
 
     def 'pass returns passed'() {
         expect:
-        v.pass()('anything') == ResultMap.passed()
+        v.pass()('anything', ctx) == ResultMap.passed()
     }
 
     def 'fail => entry'() {
         expect:
-        v.fail()('anything') ==
+        v.fail()('anything', ctx) ==
             ResultMap.from('fail': [new Result('failed because you said so',
                                                Result.CODE_ILLEGAL_VALUE)])
-        v.fail(key:'foo', msg:'bar', code:'FOO_BAR')('anything') ==
+        v.fail(key:'foo', msg:'bar', code:'FOO_BAR')('anything', ctx) ==
             ResultMap.from('foo': [new Result('bar', 'FOO_BAR')])
     }
 
@@ -26,7 +27,7 @@ class CheckersTest extends Specification {
         Check check = v.hasMember(attribute, key:'required')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input            | attribute  | results
@@ -42,7 +43,7 @@ class CheckersTest extends Specification {
         Check check = v.hasOnlyFieldsIn(['a','b','c'] as Set)
 
         expect:
-        check (input) == ResultMap.from(results)
+        check (input, ctx) == ResultMap.from(results)
 
         where:
         input                 | results
@@ -64,7 +65,7 @@ class CheckersTest extends Specification {
         Check check = v.hasOnlyFieldsIn(SampleClass)
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input                 | results
@@ -80,7 +81,7 @@ class CheckersTest extends Specification {
         Check check = v.hasOnlyFieldsIn(['a','b',3] as Set, key:'parent')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input                 | results
@@ -98,7 +99,7 @@ class CheckersTest extends Specification {
         Check check = v.hasSizeGte(1, key:'value')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input        | results
@@ -120,7 +121,7 @@ class CheckersTest extends Specification {
         Check check = v.hasSizeLte(3, key:'value')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input              | results
@@ -144,7 +145,7 @@ class CheckersTest extends Specification {
         Check check = v.hasValueGte(min,key:'val')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         min    | input   | results
@@ -164,7 +165,7 @@ class CheckersTest extends Specification {
         Check check = v.hasValueLte(max,key:'val',msg:'should be less than max')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         max        | input          | results
@@ -184,7 +185,7 @@ class CheckersTest extends Specification {
         Check check = v.isInstanceOf(type, key:'type')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input       | type         | results
@@ -205,7 +206,7 @@ class CheckersTest extends Specification {
         Check check = v.isOneOf(allowed, key:'value')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input         | allowed   | results
@@ -235,7 +236,7 @@ class CheckersTest extends Specification {
         Check check = v.isOneOf(Test, key:'value')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input        | results
@@ -251,7 +252,7 @@ class CheckersTest extends Specification {
         Check check = v.isNotNull(key: 'required')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input     | results
@@ -268,7 +269,7 @@ class CheckersTest extends Specification {
         Check check = v.isNull(key:'required')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input     | results
@@ -288,7 +289,7 @@ class CheckersTest extends Specification {
         Check check = v.matchesRe(pattern, key:'value')
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input        | pattern   | results
@@ -326,11 +327,11 @@ class CheckersTest extends Specification {
 
     def 'satisfies(pattern, test) => test?passed:ResultMap from pattern'() {
         given:
-        Check check = v.satisfies({it}, key:'invalid',
+        Check check = v.satisfies({input, context->input}, key:'invalid',
             msg:'uh oh',code:'BAD_VALUE')
 
         expect:
-        check(input) == ResultMap.from(expected)
+        check(input, ctx) == ResultMap.from(expected)
 
         where:
         input     | expected
@@ -340,11 +341,11 @@ class CheckersTest extends Specification {
 
     def 'satisfies(test,pattern) expands GStrings late to access input'() {
         given:
-        Check check = v.satisfies({it}, key:'invalid',
+        Check check = v.satisfies({input, context -> input}, key:'invalid',
             msg:"$input is not truthy", code:'BAD_VALUE')
 
         expect:
-        check(input) == ResultMap.from(expected)
+        check(input, ctx) == ResultMap.from(expected)
 
         where:
         input     | expected
@@ -358,11 +359,11 @@ class CheckersTest extends Specification {
 
     def 'satisfies(test,onFail) returns onFail() if !test(), else passing'() {
         given:
-        Check check = v.satisfies({it}, {input ->
+        Check check = v.satisfies({input, context -> input}, {input, context ->
             ResultMap.from([fail:[new val.Result('fail', 'fail')]])})
 
         expect:
-        check(input) == ResultMap.from(expected)
+        check(input, ctx) == ResultMap.from(expected)
 
         where:
         input     | expected
@@ -382,7 +383,7 @@ class CheckersTest extends Specification {
                 v.isOneOf(['a','b'], key:'test') )
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input    | results
@@ -407,7 +408,7 @@ class CheckersTest extends Specification {
                 v.isOneOf(['a','b'], key:'test') )
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input    | results
@@ -427,7 +428,7 @@ class CheckersTest extends Specification {
             v.isInstanceOf(Integer, key:'test'))
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input    | results
@@ -447,7 +448,7 @@ class CheckersTest extends Specification {
                            v.hasSizeLte(5, key:'test'))
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input          | results
@@ -461,10 +462,10 @@ class CheckersTest extends Specification {
     def 'unless evaluates bodyCheck if testCheck does not pass'() {
         given:
         Check check = v.unless(v.isInstanceOf(Collection, key:'test'),
-                             v.hasSizeLte(5, key:'test'))
+                v.hasSizeLte(5, key:'test'))
 
         expect:
-        check(input) == ResultMap.from(results)
+        check(input, ctx) == ResultMap.from(results)
 
         where:
         input          | results
@@ -480,7 +481,7 @@ class CheckersTest extends Specification {
         Check check = v.not(v.isInstanceOf(String, key:'test'))
 
         expect:
-        check(input) == ResultMap.from(expected)
+        check(input, ctx) == ResultMap.from(expected)
 
         where:
         input     | expected

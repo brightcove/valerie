@@ -21,7 +21,7 @@ class Checkers {
      * @return Check that returns ResultMap.passed()
      */
     Check pass() {
-        { input -> ResultMap.passed() }
+        { input, ctx -> ResultMap.passed() }
     }
 
     /**
@@ -33,7 +33,8 @@ class Checkers {
         mold = [key:'fail',
                 msg:'failed because you said so',
                 code:Result.CODE_ILLEGAL_VALUE] + mold
-        {input -> ResultMap.from((mold.key): [new Result(mold.msg, mold.code)])}
+        {input, ctx ->
+            ResultMap.from((mold.key): [new Result(mold.msg, mold.code)])}
     }
 
     /**
@@ -45,7 +46,7 @@ class Checkers {
     Check hasMember(Map mold=[:], String member) {
         mold = [msg:"required field ${member} is not present",
                 code:Result.CODE_REQUIRED_FIELD] + mold
-        satisfies(mold) { input -> input?.containsKey(member) }
+        satisfies(mold) { input, ctx -> input?.containsKey(member) }
     }
 
     /**
@@ -59,7 +60,7 @@ class Checkers {
     Check hasOnlyFieldsIn(Map mold=[:], Set<String> fields) {
         mold = [msg:'field is unknown',
                 code:Result.CODE_ILLEGAL_FIELD] + mold
-        { input ->
+        { input, ctx ->
             if (!(input instanceof Map))
                 return ResultMap.from(
                     (key): [new Result('only maps are supported',
@@ -101,7 +102,7 @@ class Checkers {
     Check hasSizeGte(Map mold=[:], Integer min) {
         mold = [msg: "should be at least ${min} long",
                 code: Result.CODE_TOO_SHORT] + mold
-        satisfies(mold) { input ->
+        satisfies(mold) { input, ctx ->
             input == null || input?.size() >= min
         }
     }
@@ -116,7 +117,7 @@ class Checkers {
     Check hasSizeLte(Map mold=[:], Integer max) {
         mold = [msg:"should be no longer than ${max}",
                 code:Result.CODE_TOO_LONG] + mold
-        satisfies(mold) { input -> input?.size() <= max }
+        satisfies(mold) { input, ctx -> input?.size() <= max }
     }
 
     /**
@@ -128,7 +129,7 @@ class Checkers {
     Check hasValueGte(Map mold=[:], Object min) {
         mold = [msg:"should not be less than ${min}",
                 code:Result.CODE_ILLEGAL_VALUE] + mold
-        satisfies(mold) { input ->
+        satisfies(mold) { input, ctx ->
             input == null || input >= min
         }
     }
@@ -142,7 +143,7 @@ class Checkers {
     Check hasValueLte(Map mold=[:], Object max) {
         mold = [msg:"should not be greater than ${max}",
                 code:Result.CODE_ILLEGAL_VALUE] + mold
-        satisfies(mold) { input ->
+        satisfies(mold) { input, ctx ->
             input == null || input <= max
         }
     }
@@ -156,7 +157,7 @@ class Checkers {
     Check isInstanceOf(Map mold=[:], Class<?> type) {
         mold = [msg:"is not of type ${type.simpleName}",
                 code:Result.CODE_ILLEGAL_VALUE] + mold
-        satisfies(mold) {input ->
+        satisfies(mold) {input, ctx ->
             input == null || type.isInstance(input)
         }
     }
@@ -171,7 +172,7 @@ class Checkers {
         mold = [msg:"is not one of allowed values: ${allowed}",
         code:Result.CODE_ILLEGAL_VALUE] + mold
         Set allowedSet = allowed as Set
-        satisfies(mold) { input ->
+        satisfies(mold) { input, ctx ->
             allowedSet.contains(input)
         }
     }
@@ -198,7 +199,7 @@ class Checkers {
     Check isNotNull(Map mold=[:]) {
         mold = [msg:'required field cannot be null',
                 code:Result.CODE_REQUIRED_FIELD] + mold
-        satisfies(mold) { input -> input != null }
+        satisfies(mold) { input, ctx -> input != null }
     }
 
     /**
@@ -211,7 +212,7 @@ class Checkers {
     Check isNull(Map mold=[:]) {
         mold = [msg:'field must be null',
                 code:Result.CODE_ILLEGAL_VALUE] + mold
-        satisfies(mold) { input -> input == null }
+        satisfies(mold) { input, ctx -> input == null }
     }
 
     /**
@@ -227,7 +228,7 @@ class Checkers {
         mold = [msg:'does not match required pattern',
                 code:Result.CODE_ILLEGAL_VALUE] + mold
         Pattern regex = ~pattern
-        satisfies(mold) { input ->
+        satisfies(mold) { input, ctx ->
             input == null || input.toString().matches(regex)
         }
     }
@@ -244,7 +245,7 @@ class Checkers {
      * @param mold Mold used to create ResultMap when !test
      */
     Check satisfies(Map mold=[:], Closure<Boolean> test) {
-        satisfies(test) { input ->
+        satisfies(test) { input, ctx  ->
             if (!mold.key)
                 throw new NullPointerException('key must be provided');
             ResultMap.from( (mold.key.toString()):
@@ -265,7 +266,8 @@ class Checkers {
      */
     Check satisfies(Closure<Boolean> test,
                     Closure<ResultMap> onFail) {
-        { input -> test(input) ? ResultMap.passed() : onFail(input) }
+        { input, ctx ->
+            test(input, ctx) ? ResultMap.passed() : onFail(input, ctx) }
     }
 
     //
@@ -322,9 +324,9 @@ class Checkers {
      */
     Check when(Check testCheck,
                Check bodyCheck) {
-        { input ->
-            testCheck(input) == ResultMap.passed() ? bodyCheck(input)
-                                                   : ResultMap.passed() }
+        { input, ctx ->
+            testCheck(input, ctx) == ResultMap.passed() ? bodyCheck(input, ctx)
+                                                        : ResultMap.passed() }
     }
 
     /**
@@ -337,9 +339,9 @@ class Checkers {
      */
     Check unless(Check testCheck,
                  Check bodyCheck) {
-        { input ->
-            testCheck(input) != ResultMap.passed() ? bodyCheck(input)
-                                                   : ResultMap.passed() }
+        { input, ctx ->
+            testCheck(input, ctx) != ResultMap.passed() ? bodyCheck(input, ctx)
+                                                        : ResultMap.passed() }
     }
 
     /**
@@ -361,8 +363,8 @@ class Checkers {
       mold = [key:'not',
               msg:'condition satisfied which should not have been',
               code:'NEGATED_CHECK'] + mold
-        { input ->
-            check(input) == ResultMap.passed() ? ResultMap.from(
+        { input, ctx ->
+            check(input, ctx) == ResultMap.passed() ? ResultMap.from(
               [(mold.key.toString()): [new Result(mold.msg.toString(),
                                                   mold.code.toString())]])
                                                : ResultMap.passed() }

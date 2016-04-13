@@ -28,12 +28,6 @@ class Idator implements Check {
     @Delegate final Checkers checkers
 
     /**
-     * A Map of stashed values shared among the graph of Idators
-     * allows access to stashed values within any defined checks
-     */
-    final Map stashed  //kind of like the Borg pattern
-
-    /**
      * The default key for any ResultMaps from Checks defined in this Idator
      */
     String resultKey = 'error'
@@ -48,21 +42,17 @@ class Idator implements Check {
     /**
      * Construct a new Idator using provided arguments and definition
      * @param checkers Checkers to be used as delegate for Check construction
-     * @param stashed Stash of values to be used across related Idators
      * @param key Default key for ResultMap results from defined Checks
      */
     public Idator(Checkers checkers = new val.Checkers(),
-                  Map stashed = [:],
                   String key = 'root'){
         this.checkers = checkers
-        this.stashed = stashed
         this.resultKey = key
     }
 
     def childIdator(LinkedHashMap overrides = [:]) {
         //Create array for positional parameters merging in overrides
         def args = [overrides.checkers    ?: checkers,
-                    overrides.stashed     ?: stashed,
                     overrides.resultKey   ?: resultKey]
         this.class.newInstance(*args)
     }
@@ -105,9 +95,9 @@ class Idator implements Check {
      * @return The ResultMap output for evaluating the input using this Check
      */
     @Override
-    public ResultMap call(Object input) {
-        if (toStash) stashed[toStash] = input  //Stash input if requested
-        mCheck(input)
+    public ResultMap call(Object input, EvalContext ctx) {
+        if (toStash) ctx.stashed."${toStash}" = input //Stash input if requested
+        mCheck(input, ctx)
     }
 
     /**
@@ -245,11 +235,11 @@ class Idator implements Check {
      */
     Check withValue(String child, String resultKey, Closure definition) {
         def scope = childIdator(resultKey: resultKey).using(definition)
-        return { input ->
+        return { input, ctx ->
             def value = input == null ? null // if input is null return null
                       : child == null ? input // if null child use current
                                       : input[child] // otherwise use subgraph
-            scope(value) }
+            scope(value, ctx) }
     }
 
     /**
@@ -281,11 +271,11 @@ class Idator implements Check {
      */
     Check withEachValue(Closure<Check> definition) {
         def scope = childIdator().using(definition)
-        return { input ->
+        return { input, ctx ->
             def results = ResultMap.passed()
             //Evaluate each input value using the same Check
             input.each{
-                results += scope(it) }
+                results += scope(it, ctx) }
             results }
     }
 
@@ -311,10 +301,11 @@ class Idator implements Check {
         LinkedHashMap<Check, Check> condMap = mapping.collectEntries {
             [(it.key): childIdator().using(it.value)]
         }
-        return { input ->
+        return { input, ctx ->
             for (Map.Entry<Check, Check> entry: condMap) {
-                if ((entry.key.call(accessor(input))) == ResultMap.passed()) {
-                    return entry.value.call(input)
+                if ((entry.key.call(accessor(input), ctx))
+                        == ResultMap.passed()) {
+                    return entry.value.call(input, ctx)
                 }
             }
             ResultMap.passed()
