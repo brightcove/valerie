@@ -26,7 +26,7 @@ trait Check {
      * @param input Input value which is to be evaluated
      * @return ResultMap output from evaluating input using this Check
      */
-    abstract ResultMap call(Object input)
+    abstract ResultMap call(Object input, EvalContext ctx)
 
     /**
      * Returns a composed Check that represents a short-circuiting logical AND
@@ -124,10 +124,10 @@ abstract class AbstractComposedCheck implements Check {
 @InheritConstructors
 class AndCheck extends AbstractComposedCheck {
     @Override
-    ResultMap call(Object input) {
+    ResultMap call(Object input, EvalContext ctx) {
         ResultMap result = ResultMap.passed()
-        for (Check check: members){
-            result = check(input)
+        for (Check check in members){
+            result = check(input, ctx)
             if (result != ResultMap.passed()) return result
         }
         result
@@ -140,10 +140,10 @@ class AndCheck extends AbstractComposedCheck {
 @InheritConstructors
 class OrCheck extends AbstractComposedCheck {
     @Override
-    ResultMap call(Object input) {
+    ResultMap call(Object input, EvalContext ctx) {
         ResultMap result
-        for (Check check: members){
-            result = check(input)
+        for (Check check in members){
+            result = check(input, ctx)
             if (result == ResultMap.passed()) return result
         }
         result
@@ -156,10 +156,10 @@ class OrCheck extends AbstractComposedCheck {
 @InheritConstructors
 class AllCheck extends AbstractComposedCheck {
     @Override
-    ResultMap call(Object input) {
+    ResultMap call(Object input, EvalContext ctx) {
         ResultMap merged = ResultMap.passed()
-        for (Check check: members){
-            merged += check(input)
+        for (Check check in members){
+            merged += check(input, ctx)
         }
         merged
     }

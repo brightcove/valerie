@@ -3,6 +3,8 @@ package val
 import spock.lang.Specification
 
 class CheckTest extends Specification {
+    EvalContext ctx = new EvalContext()
+
     def asResultMap(Map input) {
         ResultMap.from(input.collectEntries{k,v ->
             [ (k): v.collect{it as Result} ]
@@ -13,28 +15,28 @@ class CheckTest extends Specification {
         given:
         def expected = ResultMap.from(
             ['coerce': [new Result('worked', 'worked')]])
-        Check testCheck = { value -> expected }
+        Check testCheck = { value, context -> expected }
 
         expect:
-        testCheck('anything') == expected
+        testCheck('anything', ctx) == expected
         testCheck instanceof Check
     }
 
     def 'and performs short-circuiting logical and'() {
         given:
         Set wasCalled = new HashSet<>()
-        Check check1 = { value ->
+        Check check1 = { value, context ->
             wasCalled << 1
             asResultMap(result1)
         }
-        Check check2 = { value ->
+        Check check2 = { value, context ->
             wasCalled << 2
             asResultMap(result2)
         }
         Check andCheck = check1.and(check2)
 
         when:
-        def result = andCheck('input')
+        def result = andCheck('input', ctx)
         def expected = asResultMap(expectedResult)
 
         then:
@@ -52,18 +54,18 @@ class CheckTest extends Specification {
     def 'or performs short-cirtcuiting logical or'() {
         given:
         Set wasCalled = new HashSet<>()
-        Check check1 = { value ->
+        Check check1 = { value, context ->
             wasCalled << 1
             asResultMap(result1)
         }
-        Check check2 = { value ->
+        Check check2 = { value, context ->
             wasCalled << 2
             asResultMap(result2)
         }
         Check orCheck = check1.or(check2)
 
         when:
-        def result = orCheck('input')
+        def result = orCheck('input', ctx)
 
         then:
         result == asResultMap(expectedResult)
@@ -80,18 +82,18 @@ class CheckTest extends Specification {
     def 'add performs composes without short circuiting'() {
         given:
         Set wasCalled = new HashSet<>()
-        Check check1 = { value ->
+        Check check1 = { value, context ->
             wasCalled << 1
             asResultMap(result1)
         }
-        Check check2 = { value ->
+        Check check2 = { value, context ->
             wasCalled << 2
             asResultMap(result2)
         }
         Check composedCheck = check1 + check2
 
         when:
-        def result = composedCheck('input')
+        def result = composedCheck('input', ctx)
 
         then:
         result == asResultMap(expectedResult)
