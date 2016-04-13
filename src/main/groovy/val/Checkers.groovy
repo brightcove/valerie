@@ -63,7 +63,7 @@ class Checkers {
         { input, ctx ->
             if (!(input instanceof Map))
                 return ResultMap.from(
-                    (key): [new Result('only maps are supported',
+                    (mold.key): [new Result('only maps are supported',
                                        'ILLEGAL_VALUE')])
             Map collectedResults = [:]
             ((Map) input).keySet().each{ fieldName ->
