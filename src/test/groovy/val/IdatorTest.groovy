@@ -10,7 +10,7 @@ class IdatorTest extends Specification {
 
     def 'using creates Check out of definition'() {
         given:
-        Check check = new Idator(checkers, 'key').using{ isNotNull() }
+        Check check = new Idator('key').using(checkers){ isNotNull() }
 
         expect:
         check(null, ctx) == val.ResultMap.from(
@@ -20,7 +20,7 @@ class IdatorTest extends Specification {
 
     def 'define allows checks to be `all`ed using provided key by default'() {
         given:
-        Check check = new Idator(checkers, 'key').using{
+        Check check = new Idator('key').using(checkers){
             define isInstanceOf(Collection)
             define isInstanceOf(String)
         }
@@ -35,7 +35,7 @@ class IdatorTest extends Specification {
 
     def 'a return value Check of a definition is defined implicitly'() {
         given:
-        Check check = new Idator(checkers, 'key').using{
+        Check check = new Idator('key').using(checkers){
             define isInstanceOf(Map)
             isInstanceOf(Collection) //This one will be ignored
             isInstanceOf(String)
@@ -51,7 +51,7 @@ class IdatorTest extends Specification {
 
     def 'the default key for the current definition is set with resultKey'() {
         given:
-        Check check = new Idator(checkers, 'key').using {
+        Check check = new Idator('key').using(checkers) {
             resultKey = 'updated'
             define isInstanceOf(Collection)
             define isInstanceOf(String)
@@ -67,7 +67,7 @@ class IdatorTest extends Specification {
 
     def 'define accepts a map which can be used to define children'() {
         expect:
-        new Idator(checkers, 'key').using{
+        new Idator('key').using(checkers){
             define a: { isNotNull() }
             define b: {
                 define isInstanceOf(Map)
@@ -83,7 +83,7 @@ class IdatorTest extends Specification {
 
     def 'subDefine is define which constructs the path as it goes'() {
         expect:
-        new Idator(checkers, 'root').using{
+        new Idator('root').using(checkers){
             subDefine a: { isNotNull() }
             define b: {
                 define isInstanceOf(Map)
@@ -103,7 +103,7 @@ class IdatorTest extends Specification {
 
     def 'require establishes preconditions for any defined checks'() {
         expect:
-        new Idator(checkers, 'root').using{
+        new Idator('root').using(checkers){
             require isNotNull()
             define isInstanceOf(String)
         }(input, ctx) == ResultMap.from(results)
@@ -119,7 +119,7 @@ class IdatorTest extends Specification {
 
     def 'stashValueAs saves the active input for later stashed.{} reference'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             stashValueAs 'top'
             define child2: {
                 satisfies(key:'wrong',
@@ -138,7 +138,7 @@ class IdatorTest extends Specification {
     def 'stash is thread safe when using distinct contexts'() {
         given:
         AtomicInteger failures = new AtomicInteger(0)
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             stashValueAs 'top'
             define child2: {
                 satisfies(key:'wrong',
@@ -166,7 +166,7 @@ class IdatorTest extends Specification {
 
     def 'withValue(def) creates nested definition for organization'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             isNotNull() & withValue{
                 define isInstanceOf(String)
                 define isInstanceOf(Integer)
@@ -191,7 +191,7 @@ class IdatorTest extends Specification {
 
     def 'withValue(child,def) defines for the specified child'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             withValue('a') { isInstanceOf(String) }
         }
 
@@ -207,7 +207,7 @@ class IdatorTest extends Specification {
 
     def 'withValue(child,rKey,def) defines child & resultKey'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             withValue('a', 'aKey') { isInstanceOf(String) }
         }
 
@@ -223,7 +223,7 @@ class IdatorTest extends Specification {
 
     def 'withSubValue defines child & builds resultKey using present key'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             withSubValue('a') { isInstanceOf(String) }
         }
 
@@ -239,7 +239,7 @@ class IdatorTest extends Specification {
 
     def 'withEachValue will validate on each member in a collection'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             withEachValue{isNotNull()}
         }
 
@@ -263,7 +263,7 @@ class IdatorTest extends Specification {
 
     def 'withEachValue will iterate over map entries'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             withEachValue{ define value: {isNotNull()}}
         }
 
@@ -285,7 +285,7 @@ class IdatorTest extends Specification {
 
     def 'cond will evaluate first definition where check matches'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             cond([
                     (isInstanceOf(String))     : { hasSizeLte(5) },
                     (isInstanceOf(Collection)) : { isInstanceOf(Set) }
@@ -308,7 +308,7 @@ class IdatorTest extends Specification {
 
     def 'cond takes an optional closure returning the test input'() {
         given:
-        def check = new Idator(checkers, 'root').using{
+        def check = new Idator('root').using(checkers){
             cond({it?.child}, [
                     (isInstanceOf(String))     : { hasSizeLte(5) },
                     (isInstanceOf(Collection)) : { isInstanceOf(Set) }
@@ -332,50 +332,12 @@ class IdatorTest extends Specification {
 
     def 'define loads an initial validation scope'() {
         given:
-        def definedCheck = new val.Idator().using{isNotNull(key:'test')}
+        def definedCheck = new val.Idator().using(checkers) {
+            isNotNull(key:'test')}
 
         expect:
         definedCheck(null, ctx).asMap().containsKey('test')
         !(definedCheck('a', ctx).asMap().containsKey('test'))
     }
 
-    def 'a registered checker can be used in definition closures'() {
-        given:
-        def testResult = val.ResultMap.from(
-            ['test':new val.Result('successful','WOOHOO')])
-
-        when:
-        def validator = new val.Idator()
-        validator.registerChecker('myTestChecker', { String a ->
-            {input, ctx -> testResult }
-        })
-
-        then:
-        validator.using{define myTestChecker('a')}('input', ctx) == testResult
-    }
-
-    def 'custom registered checkers behave like standard checkers'() {
-        given:
-        def validator = new val.Idator()
-        validator.registerChecker('isRequiredString',
-                                  { isNotNull() & isInstanceOf(String) &
-                                      hasSizeGte(1) })
-
-        expect:
-        validator.using{
-            subDefine child: { isRequiredString() }
-            define name: { isRequiredString() }
-        }(input, ctx) == ResultMap.from(expected)
-
-        where:
-        input              | expected
-        [child: 'valid']   | [name: [
-                new val.Result('required field cannot be null',
-                               'REQUIRED_FIELD')]]
-        [:]                | [name: [
-                new val.Result('required field cannot be null',
-                               'REQUIRED_FIELD')
-            ], 'root.child': [new val.Result('required field cannot be null',
-                                             'REQUIRED_FIELD')]]
-    }
 }

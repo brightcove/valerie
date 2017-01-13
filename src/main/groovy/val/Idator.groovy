@@ -18,14 +18,14 @@ package val
  * the root of the input graph and containing all other Idators
  * (normally resulting in an arborescence)
  */
-class Idator implements Check {
+class Idator<T extends Checkers> implements Check {
 
     /**
      * A shared instance of Checkers which is used as a delegate for
      * Idators to allow Check construction
      * (and used internally)
      */
-    @Delegate final Checkers checkers
+    T checkers
 
     /**
      * The default key for any ResultMaps from Checks defined in this Idator
@@ -33,7 +33,7 @@ class Idator implements Check {
     String resultKey = 'error'
 
     //The check created by the Definition, target delegate for evaluation/call
-    private Check mCheck
+    private TransformerCheck mCheck
 
     //List of checks which are defined within the Definition
     private List definedChecks = new LinkedList()
@@ -41,49 +41,100 @@ class Idator implements Check {
 
     /**
      * Construct a new Idator using provided arguments and definition
-     * @param checkers Checkers to be used as delegate for Check construction
      * @param key Default key for ResultMap results from defined Checks
      */
-    public Idator(Checkers checkers = new val.Checkers(),
-                  String key = 'root'){
-        this.checkers = checkers
+    Idator(String key = 'root',
+           TransformerCheck mCheck = new NopTransformer()){
         this.resultKey = key
+        this.mCheck = mCheck
+    }
+
+    // Runtime metaprogramming to dispatch to Checkers
+
+    // Will presently most likely have issues if Maps are non-mold parameters
+    // This could be avoided through some form of counting or an annotation
+    // The solution is deferred until the problem arises
+
+    /**
+     * Create an invocation of the provided function with
+     * a mold that represents the present context, either by creating
+     * a new argument for that mold or modifying a previously provided one.
+     */
+    def addContextToMold = { name ->
+        { Object[] args ->
+            // if no args were passed just call with a mold based on the context
+            if (!args) {
+                checkers."${name}"(key:delegate.resultKey)
+            }
+            // if the first arg is a map, assume it is the mold
+            else if (args[0] instanceof Map)  {
+                args[0] = [key:delegate.resultKey] + args[0]
+                checkers."${name}"(*args)
+            }
+            // else the optional mold was not provided so add one as first arg
+            else {
+                checkers."${name}"([key:delegate.resultKey], *args)
+            }
+        }
+    }
+
+    def methodMissing(String name, args) {
+        def types = args.collect{it.getClass()}
+        def check
+
+        if (moldCouldBeAdded(name, types) ){
+            check = addContextToMold(name)
+        }
+        else if (providedCallIsValid(name, types)) {
+	    //Contextualize existing mold with defaults if present
+            if (moldIsPresent(args)) check = addContextToMold(name)
+            else check = checkers.&"${name}"
+        }
+        else throw new MissingMethodException(name, this.class, args)
+        // Shorten future dispatching
+        this.metaClass."${name}" = check
+        check(*args)
+    }
+
+    /**
+     * Did the provided call omit the mold?
+     */
+    private Boolean moldCouldBeAdded(String name, List<Class<?>> types) {
+      checkers?.metaClass?.respondsTo(checkers, name, Map, *types)
+    }
+
+    /**
+     * Is the provided call a valid signature for Checkers?
+     */
+    private Boolean providedCallIsValid(String name, List<Class<?>> types) {
+      checkers?.metaClass?.respondsTo(checkers, name, *types)
+    }
+
+    /**
+     * Does the argument list include an object which is likely a mold?
+     */
+    private Boolean moldIsPresent(args) {
+      args && args[0] instanceof Map
     }
 
     def childIdator(LinkedHashMap overrides = [:]) {
         //Create array for positional parameters merging in overrides
-        def args = [overrides.checkers    ?: checkers,
-                    overrides.resultKey   ?: resultKey]
+        def args = [overrides.resultKey   ?: resultKey]
+        if (overrides['mCheck']) args << overrides['mCheck']
         this.class.newInstance(*args)
     }
 
-    /**
-     * @deprecated 0.4.0: prefer constructor followed by using
-     */
-    @Deprecated
-    public Idator(Checkers checkers, Map stashed, String key,
-                  Closure definition){
-        this(checkers, stashed, key)
-        using(definition)
-    }
-
-    def using(Closure definition) {
+    def using(@DelegatesTo.Target T checkers,
+              @DelegatesTo(strategy = Closure.DELEGATE_FIRST)
+                      Closure definition) {
+        this.checkers = checkers
         definition.delegate = this
         definition.resolveStrategy = Closure.DELEGATE_FIRST
         def definitionReturn = definition()
         if (definitionReturn instanceof Check) definedChecks << definitionReturn
-        mCheck = new AndCheck(requiredChecks + [new AllCheck(definedChecks)])
+        mCheck.nestedCheck =
+                new AndCheck(requiredChecks + [new AllCheck(definedChecks)])
         this
-    }
-
-    /**
-     * Register the provided closure as a Checker to be able to be used
-     * within the definitions
-     * @param name The name by which the Checker can be called
-     * @param closure Closure containing logic to create Check
-     */
-    void registerChecker(String name, Closure closure) {
-        this.metaClass."${name}" << closure
     }
 
     /**
@@ -95,8 +146,7 @@ class Idator implements Check {
      * @return The ResultMap output for evaluating the input using this Check
      */
     @Override
-    public ResultMap call(Object input, EvalContext ctx) {
-        if (toStash) ctx.stashed."${toStash}" = input //Stash input if requested
+    ResultMap call(Object input, EvalContext ctx) {
         mCheck(input, ctx)
     }
 
@@ -156,6 +206,9 @@ class Idator implements Check {
             definedChecks << withSubValue(k, v)
         }
     }
+    void has(Map<String, Closure> entries) {
+        subDefine(entries)
+    }
 
     /**
      * Require a Check to pass before evaluating any `define`d Checks and return
@@ -184,8 +237,6 @@ class Idator implements Check {
         }
     }
 
-    //Under which key the value for this scope should be stashed if any
-    private String toStash
     /**
      * Stash the value from the input graph during evaluation phase so it could
      * be used by other Checks
@@ -195,7 +246,7 @@ class Idator implements Check {
      * @param name The key under which this value will be stashed
      */
     void stashValueAs(String name) {
-        toStash = name
+        mCheck.toStash = name
     }
 
     /**
@@ -204,8 +255,12 @@ class Idator implements Check {
      * @param definition Definition from which to create Check
      * @return Check created from provided Definition
      */
+    @Deprecated
     Check withValue(Closure definition){
-        withValue(null, resultKey, definition)
+        valueOf(null, resultKey, definition)
+    }
+    Check valueOf(Closure definition) {
+        valueOf(null, resultKey, definition)
     }
 
     /**
@@ -217,8 +272,12 @@ class Idator implements Check {
      * @param definition Definition to create Check for graph/subgraph
      * @return Check created from thee provided Definition
      */
+    @Deprecated
     Check withValue(String child, Closure definition) {
         withValue(child, child, definition)
+    }
+    Check valueOf(String child, Closure definition) {
+        valueOf(child, child, definition)
     }
 
     /**
@@ -233,15 +292,15 @@ class Idator implements Check {
      * @param definition Definition to create Check for graph/subgraph
      * @return Check created from the provided Definition
      */
+    @Deprecated
     Check withValue(String child, String resultKey, Closure definition) {
-        def scope = childIdator(resultKey: resultKey).using(definition)
-        return { input, ctx ->
-            def value = input == null ? null // if input is null return null
-                      : child == null ? input // if null child use current
-                                      : input[child] // otherwise use subgraph
-            scope(value, ctx) }
+        valueOf(child, resultKey, definition)
     }
-
+    Check valueOf(String child, String resultKey, Closure definition) {
+        childIdator(resultKey: resultKey,
+                mCheck: new ChildTraverser(childName: child)).using(
+                checkers, definition)
+    }
     /**
      * Process a Definition using the named child node as the root of the input
      * subgraph and
@@ -255,7 +314,7 @@ class Idator implements Check {
      * @return Check created from thee provided Definition
      */
     Check withSubValue(String child, Closure definition) {
-        withValue(child, "${this.resultKey}.${child}", definition)
+        valueOf(child, "${this.resultKey}.${child}", definition)
     }
 
     /**
@@ -270,7 +329,7 @@ class Idator implements Check {
      * defined Check for each item
      */
     Check withEachValue(Closure<Check> definition) {
-        def scope = childIdator().using(definition)
+        def scope = childIdator().using(checkers, definition)
         return { input, ctx ->
             def results = ResultMap.passed()
             //Evaluate each input value using the same Check
@@ -279,6 +338,7 @@ class Idator implements Check {
             results }
     }
 
+    //FIXME: This belongs in Checkers
     /**
      * Define a Map where where the Definition (value) for the first matching
      * condition (key will be evaluated).
@@ -299,7 +359,7 @@ class Idator implements Check {
     }
     Check cond(Closure accessor, LinkedHashMap<Check, Closure> mapping) {
         LinkedHashMap<Check, Check> condMap = mapping.collectEntries {
-            [(it.key): childIdator().using(it.value)]
+            [(it.key): childIdator().using(checkers, it.value)]
         }
         return { input, ctx ->
             for (Map.Entry<Check, Check> entry: condMap) {
@@ -312,103 +372,16 @@ class Idator implements Check {
         }
     }
 
-    // All of these calls delegate to Checkers
-    // In some future version the internals of this should possibly be
-    // shuffled around to allow easier extensibility
-    // and separation of concerns. The idea would be to create a designated
-    // mediator that handles the resultKey
-    // behavior while also providing a consolidated container for the checks
-    // available.
-    // This is unjustifiably complex at the moment but could be helpful if
-    // this becomes a generalized library
-    // A basic design would be to replace the Checkers reference with the
-    // mediator, modify each method in the mediator
-    // to expect a scope instance (provider of resultKey), and then modify the
-    // metaClass for this behavior to delegate
-    // to the mediator passing the present instance. This would allow easy
-    // registration of per val.Idator custom checks.
-    // TODO: Extract this comment into a more proper home when the project
-    // also has a home
     /**
      * {@link val.Checkers#when} accepting a Definition for bodyCheck
      */
     Check when(Check check, Closure definition) {
-        checkers.when(check, childIdator().using(definition))
+        checkers.when(check, childIdator().using(checkers, definition))
     }
     /**
      * {@link val.Checkers#unless} accepting a Definition for bodyCheck
      */
     Check unless(Check check, Closure closure) {
-        checkers.unless(check, childIdator().using(closure))
-    }
-
-    /**
-     * {@link val.Checkers#hasMember} passing the key for this instance
-     */
-    Check hasMember(Map mold=[:], String field) {
-        checkers.hasMember([key:resultKey]+mold, field) }
-    /**
-     * {@link val.Checkers#hasOnlyFieldsIn} passing the key for this instance
-     */
-    Check hasOnlyFieldsIn(Map mold=[:], Class targetClass) {
-        checkers.hasOnlyFieldsIn([key:resultKey]+mold, targetClass)
-    }
-    /**
-     * (@link val.Checkers#hasSizeGte} passing the key for this instance
-     */
-    Check hasSizeGte(Map mold=[:], Integer min) {
-        checkers.hasSizeGte([key:resultKey]+mold, min) }
-    /**
-     * {@link val.Checkers#hasSizeLte} passing the key for this instance
-     */
-    Check hasSizeLte(Map mold=[:], Integer max) {
-        checkers.hasSizeLte([key:resultKey]+mold, max) }
-    /**
-     * {@link val.Checkers#hasValueGte} passing the key for this instance
-     */
-    Check hasValueGte(Map mold=[:], Integer max) {
-        checkers.hasValueGte([key:resultKey]+mold, max) }
-    /**
-     * {@link val.Checkers#hasValueLte} passing the key for this instance
-     */
-    Check hasValueLte(Map mold=[:], Integer max) {
-        checkers.hasValueLte([key:resultKey]+mold, max) }
-    /**
-     * {@link val.Checkers#isNotNull} passing the key for this instance
-     */
-    Check isNotNull(Map mold=[:]) {
-        checkers.isNotNull([key:resultKey]+mold) }
-    /**
-     * {@link val.Checkers#isNull} passing the key for this instance
-     */
-    Check isNull(Map mold=[:]) {
-        checkers.isNull([key:resultKey]+mold) }
-    /**
-     * {@link val.Checkers#isOneOf} passing the key for this instance
-     */
-    Check isOneOf(Map mold=[:], Class<? extends Enum> type) {
-        checkers.isOneOf([key:resultKey]+mold, type) }
-    /**
-     * {@link val.Checkers#isInstanceOf} passing the key for this instance
-     */
-    Check isInstanceOf(Map mold=[:], Class<?> type) {
-        checkers.isInstanceOf([key:resultKey]+mold, type) }
-    /**
-     * {@link val.Checkers#matchesRe} passing the key for this instance
-     */
-    Check matchesRe(Map mold=[:], String pattern) {
-        checkers.matchesRe([key:resultKey]+mold, pattern) }
-    /**
-     * Alias for {@link val.Checkers#pass} to provide a more readable default
-     * clause in a {@link #cond}
-     */
-    Check otherwise() {
-        checkers.pass() }
-
-    /**
-     * Convenience delegation for use of Check in when/cond, etc.
-     */
-    Check satisfies(Map mold=[:], Closure test) {
-        checkers.satisfies([key:resultKey]+mold, test)
+        checkers.unless(check, childIdator().using(checkers, closure))
     }
 }

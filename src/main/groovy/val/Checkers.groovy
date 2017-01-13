@@ -16,6 +16,10 @@ import java.util.regex.Pattern
  */
 class Checkers {
 
+    //Hack to provide completion
+    @Delegate()
+    Idator dummyMethods = new Idator()
+
     /**
      * Return a passing ResultMap.
      * @return Check that returns ResultMap.passed()
@@ -264,7 +268,8 @@ class Checkers {
      * which should indicate test failure
      * @return Check to evaluate input
      */
-    Check satisfies(Closure<Boolean> test,
+    Check satisfies(Map mold = [:],
+                    Closure<Boolean> test,
                     Closure<ResultMap> onFail) {
         { input, ctx ->
             test(input, ctx) ? ResultMap.passed() : onFail(input, ctx) }
