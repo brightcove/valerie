@@ -1,6 +1,6 @@
-package val
+package val;
 
-import groovy.transform.ToString
+import java.util.*;
 
 /**
  * A collection of all {@link Result}s returned by evaluating a Checkers
@@ -11,21 +11,21 @@ import groovy.transform.ToString
  * If the map is empty then the checks have nothing to say (everything passed).
  * ResultMaps are immutable value objects
  */
-class ResultMap {
-    private final Map<String, List<Result>> values
+public class ResultMap {
+    private final Map<String, List<Result>> values;
 
     //The vast majority/all of the values will normally be equal to this, so a
     // flyweight is used
     //This behavior should not be considered part of the exposed API or relied
     // on in any client code
-    final static ResultMap PASSED = new ResultMap([:])
+    final static ResultMap PASSED = new ResultMap(new HashMap<>());
 
     /**
      * A convenience factory method for an empty/passing ResultMap
      * @return ResultMap with no entries
      */
     public static ResultMap passed() {
-        return PASSED
+        return PASSED;
     }
 
     /**
@@ -35,15 +35,21 @@ class ResultMap {
      * and the values are the list of Results
      * @return A ResultMap with the entries provided
      */
-    public static ResultMap from(Map<String, Iterable<Result>> map) {
-        if (map.size() == 0) return PASSED
-        new ResultMap(map)
+    public static ResultMap from(Map<String, List<Result>> map) {
+        if (map.isEmpty()) return PASSED;
+        return new ResultMap(map);
+    }
+
+    public static ResultMap from(String key, List<Result> results) {
+        Map<String, List<Result>> map = new HashMap<>();
+        map.put(key, results);
+        return ResultMap.from(map);
     }
 
     //Hide the default constructor to allow avoiding instantiation and allow
     // flyweight style optimizations
     private ResultMap(Map<String, List<Result>> pValues) {
-        this.values = new HashMap<>(pValues)
+        this.values = new HashMap<String, List<Result>>(pValues);
     }
 
     /**
@@ -51,7 +57,7 @@ class ResultMap {
      * @return A Map containing the entries within this ResultMap
      */
     public Map<String, List<Result>> asMap() {
-        return new HashMap<>(values)
+        return new HashMap<>(values);
     }
 
     /**
@@ -61,28 +67,35 @@ class ResultMap {
      * @return a ResultMap containing the merged entries of this and right
      */
     ResultMap plus(ResultMap right) {
-        if (right.values.size() == 0) return this
-        if (this.values.size() == 0) return right
-        Map merged = new HashMap<>(this.values)
-        right.values.each{ k, v ->
-            merged[k] = merged.containsKey(k) ? merged[k] + v : v
+        if (right.values.isEmpty()) return this;
+        if (this.values.isEmpty()) return right;
+        Map<String, List<Result>> merged = new HashMap<>(this.values);
+        for (Map.Entry<String, List<Result>> e: right.values.entrySet()) {
+            String k = e.getKey();
+            if (merged.containsKey(k)) {
+                merged.get(k).addAll(e.getValue());
+            } else {
+                merged.put(k, e.getValue());
+            }
         }
-        return new ResultMap(merged)
-    }
-
-    //Groovy magic wasn't working consistently so these methods are explicit
-    @Override
-    boolean equals(Object obj) {
-        return obj instanceof ResultMap && this.values == obj.values
+        return new ResultMap(merged);
     }
 
     @Override
-    int hashCode() {
-        return values.hashCode()
+    public boolean equals(Object other) {
+        return other instanceof ResultMap &&
+            Objects.equals(values, ((ResultMap) other).values);
     }
 
     @Override
-    String toString() {
-        return "ResultMap:${values}"
+    public int hashCode() {
+        return values.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder("ResultMap:")
+            .append(values.toString())
+            .toString();
     }
 }

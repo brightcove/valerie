@@ -264,7 +264,7 @@ class IdatorTest extends Specification {
     def 'withEachValue will iterate over map entries'() {
         given:
         def check = new Idator('root').using(checkers){
-            withEachValue{ define value: {isNotNull()}}
+            withEachValue{define value: {isNotNull()}}
         }
 
         expect:

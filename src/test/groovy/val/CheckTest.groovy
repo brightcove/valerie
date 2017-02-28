@@ -110,9 +110,9 @@ class CheckTest extends Specification {
 
     def 'composed checks list constructor stores the list as the members'() {
         given:
-        def check1 = Mock(Check)
-        def check2 = Mock(Check)
-        def childAll = new AllCheck([Mock(Check), Mock(Check)])
+        Check check1 = {}
+        Check check2 = {}
+        def childAll = new AllCheck([{}, {}])
 
         expect:
         new AllCheck([check1, check2, childAll]).members ==
@@ -121,7 +121,7 @@ class CheckTest extends Specification {
 
     def 'composed checks two arg constructor merges children of same type'() {
         given:
-        def (check1, check2, check3, check4) = (1..4).collect{Mock(Check)}
+        def (check1, check2, check3, check4) = (1..4).collect{({} as Check)}
         def child1 = new AllCheck(check1, check2)
         def child2 = new AllCheck([check3, check4, check1])
 
@@ -134,7 +134,7 @@ class CheckTest extends Specification {
 
     def 'composed 2 arg constructor does not merge different type children'() {
         given:
-        def (check1, check2, check3, check4) = (1..4).collect{Mock(Check)}
+        def (check1, check2, check3, check4) = (1..4).collect{({} as Check)}
         def child1 = new AndCheck(check1, check2)
         def child2 = new OrCheck([check3, check4, check1])
 

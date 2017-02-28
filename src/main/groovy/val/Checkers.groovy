@@ -1,5 +1,7 @@
 package val
 
+import val.Result
+
 import java.util.regex.Pattern
 
 /**
@@ -14,32 +16,11 @@ import java.util.regex.Pattern
  * testing and general future proofing (such as allowing configuration). The
  * functionality in this class should also be language agnostic.
  */
-class Checkers {
+class Checkers extends CheckFactory {
 
     //Hack to provide completion
     @Delegate()
     Idator dummyMethods = new Idator()
-
-    /**
-     * Return a passing ResultMap.
-     * @return Check that returns ResultMap.passed()
-     */
-    Check pass() {
-        { input, ctx -> ResultMap.passed() }
-    }
-
-    /**
-     * Return ResultMap constructed from provided arguments
-     * @param mold Mold for ResultMap
-     * @return Check which will return ResultMap with constructed Result
-     */
-    Check fail(Map mold=[:]) {
-        mold = [key:'fail',
-                msg:'failed because you said so',
-                code:Result.CODE_ILLEGAL_VALUE] + mold
-        {input, ctx ->
-            ResultMap.from((mold.key): [new Result(mold.msg, mold.code)])}
-    }
 
     /**
      * Validate that the input contains `member` (regardless of value)
@@ -203,7 +184,8 @@ class Checkers {
     Check isNotNull(Map mold=[:]) {
         mold = [msg:'required field cannot be null',
                 code:Result.CODE_REQUIRED_FIELD] + mold
-        satisfies(mold) { input, ctx -> input != null }
+        satisfies(mold) { input, ctx ->
+            input != null }
     }
 
     /**
@@ -217,103 +199,6 @@ class Checkers {
         mold = [msg:'field must be null',
                 code:Result.CODE_ILLEGAL_VALUE] + mold
         satisfies(mold) { input, ctx -> input == null }
-    }
-
-    /**
-     * Validate that the string representation of input matches the pattern
-     * specified (implicitly anchored)
-     *
-     * This will match using implicit stringifying (toString)
-     * so things like arrays _could_ be tested (but probably shouldn't)
-     * @param pattern String representation of regular expression to match
-     * @param mold Mold for ResultMap if input does not match
-     */
-    Check matchesRe(Map mold=[:], String pattern) {
-        mold = [msg:'does not match required pattern',
-                code:Result.CODE_ILLEGAL_VALUE] + mold
-        Pattern regex = ~pattern
-        satisfies(mold) { input, ctx ->
-            input == null || input.toString().matches(regex)
-        }
-    }
-
-    //
-    //Generalized building block type functions
-    //
-    /**
-     * Invokes predicate function test with input and if the test returns false
-     * returns a ResultMap containing an entry with a key of key and a Result
-     * having message and code
-     * @param test Closure which accepts the input and returns a Boolean to
-     * determine whether to call onFail
-     * @param mold Mold used to create ResultMap when !test
-     */
-    Check satisfies(Map mold=[:], Closure<Boolean> test) {
-        satisfies(test) { input, ctx  ->
-            if (!mold.key)
-                throw new NullPointerException('key must be provided');
-            ResultMap.from( (mold.key.toString()):
-                            [new Result(mold.msg.toString(),
-                                        mold.code.toString())] )
-        }
-    }
-
-    /**
-     * Invokes predicate function test passing input as an argument and
-     * returns onFail result if non-truthy
-     * otherwise ResultMap.passed()
-     * @param test Closure which returns a Boolean based on the value to
-     * determine whether to call onFail
-     * @param onFail Closure which takes the input and returns the ResultMap
-     * which should indicate test failure
-     * @return Check to evaluate input
-     */
-    Check satisfies(Map mold = [:],
-                    Closure<Boolean> test,
-                    Closure<ResultMap> onFail) {
-        { input, ctx ->
-            test(input, ctx) ? ResultMap.passed() : onFail(input, ctx) }
-    }
-
-    //
-    // COMBINATORS
-    // Used to return a new check that is a combined version of provided checks
-    // All other functions should not expect collections of closures as client
-    // code can use the appropriate combinator
-    //
-    /**
-     * Combine sequence of provided checks, execute all of them, and return
-     * merged results
-     * @param rules Sequence of Checks, all of which wil be executed
-     * @return Composed Check to evaluate input and return the merged ResultMap
-     */
-    Check all(Check... checks) {
-        new AllCheck(checks as ArrayList)
-    }
-
-    /**
-     * Combine sequence of provided checks with a short circuited logical `and`
-     * If any check returns a non passing ResultMap, then stop iterating and
-     * return that ResultMap
-     * @param checks Sequence of Checks to evaluate in order
-     * @return Composed Check to evaluate input and return the first
-     * non-passing ResultMap else ResultMap.passed()
-     */
-    Check and(Check... checks) {
-        new AndCheck(checks as ArrayList)
-    }
-
-    /**
-     * Combine sequence of provided checks with a short circuited logical 'or'
-     * If any check returns a passing ResultMap, than stop iterating and return
-     * that ResultMap
-     * If no checks return a passing ResultMap, then return the last ResultMap
-     * @param checks Sequence of Checks to evaluate in order
-     * @return Composed Check to evaluate input and return the first
-     * ResultMap.passed() or last non-passing
-     */
-    Check or(Check... checks) {
-        new OrCheck(checks as ArrayList)
     }
 
     //

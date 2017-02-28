@@ -18,7 +18,7 @@ package val
  * the root of the input graph and containing all other Idators
  * (normally resulting in an arborescence)
  */
-class Idator<T extends Checkers> implements Check {
+class Idator<T extends Checkers> extends Check {
 
     /**
      * A shared instance of Checkers which is used as a delegate for
@@ -145,7 +145,6 @@ class Idator<T extends Checkers> implements Check {
      * the parent Idators
      * @return The ResultMap output for evaluating the input using this Check
      */
-    @Override
     ResultMap call(Object input, EvalContext ctx) {
         mCheck(input, ctx)
     }
@@ -329,13 +328,15 @@ class Idator<T extends Checkers> implements Check {
      * defined Check for each item
      */
     Check withEachValue(Closure<Check> definition) {
-        def scope = childIdator().using(checkers, definition)
+        def scope = childIdator(mCheck: NopTransformer.INSTANCE)
+                                .using(checkers, definition)
         return { input, ctx ->
             def results = ResultMap.passed()
             //Evaluate each input value using the same Check
             input.each{
                 results += scope(it, ctx) }
-            results }
+            results
+        }
     }
 
     //FIXME: This belongs in Checkers

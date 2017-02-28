@@ -1,6 +1,7 @@
 plugins {
-    id 'groovy'
-    id 'maven-publish'
+  id 'java'
+  id 'groovy'
+  id 'maven-publish'
     id 'codenarc'
     id 'net.researchgate.release' version '2.2.2'
     id "com.jfrog.bintray" version "1.4"
@@ -31,8 +32,8 @@ publishing {
             groupId project.group
             artifactId project.name
             version project.version
-	    artifact sourcesJar
-	    artifact javadocJar
+            artifact sourcesJar
+            artifact javadocJar
         }
     }
 }
@@ -64,4 +65,4 @@ bintrayUpload.onlyIf{
 
 codenarc.config = resources.text.fromFile('config/codenarc/codenarc.groovy')
 
-wrapper.gradleVersion = '2.10'
+wrapper.gradleVersion = '3.3'

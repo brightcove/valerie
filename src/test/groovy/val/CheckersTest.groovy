@@ -294,9 +294,9 @@ class CheckersTest extends Specification {
                                                 'ILLEGAL_VALUE')]]
     }
 
-    def 'matchesRe checks whether value matches provided regular expression'() {
+    def 'includesPattern checks whether value matches regular expression'() {
         given:
-        Check check = v.matchesRe(pattern, key:'value')
+        Check check = v.includesPattern(pattern, key:'value')
 
         expect:
         check(input, ctx) == ResultMap.from(results)
@@ -351,7 +351,8 @@ class CheckersTest extends Specification {
 
     def 'satisfies(test,pattern) expands GStrings late to access input'() {
         given:
-        Check check = v.satisfies({input, context -> input}, key:'invalid',
+        Check check = v.satisfies({input, context ->
+            !!input}, key:'invalid',
             msg:"$input is not truthy", code:'BAD_VALUE')
 
         expect:
@@ -369,7 +370,9 @@ class CheckersTest extends Specification {
 
     def 'satisfies(test,onFail) returns onFail() if !test(), else passing'() {
         given:
-        Check check = v.satisfies({input, context -> input}, {input, context ->
+        Check check = v.satisfies([:],
+                                  {input, context -> !!input},
+                                  {input, context ->
             ResultMap.from([fail:[new val.Result('fail', 'fail')]])})
 
         expect:
