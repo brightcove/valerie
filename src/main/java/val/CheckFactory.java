@@ -3,6 +3,13 @@ package val;
 import java.util.*;
 import java.util.regex.*;
 
+import org.checkerframework.checker.nullness.qual.*;
+
+/**
+ * Factory class which produces {@link Check}s implementing
+ * defined validations and (soon) provides additional context
+ * for use in the {@code mold} of that Check.
+ */
 public class CheckFactory {
 
     /**
@@ -10,7 +17,7 @@ public class CheckFactory {
      * @return Check that returns ResultMap.passed()
      */
     public Check pass() {
-        return Check.from((input, ctx) -> { return ResultMap.passed(); });
+        return Check.from((input, ctx) -> { return ResultMap.CLEAN; });
     }
 
     /**
@@ -41,7 +48,10 @@ public class CheckFactory {
      * @param pattern String representation of regular expression to match
      * @param mold Mold for ResultMap if input does not match
      */
+    @EnsuresNonNull({"#1", "#2"})
     public Check includesPattern(Map args, String pattern) {
+        if (args == null) throw new NullPointerException("args must not be null");
+        if (pattern == null) throw new NullPointerException("pattern must not be null");
         Pattern regex = Pattern.compile(pattern);
         return satisfies(moldify(args)
                          .withDefault("msg", "does not match required pattern")
@@ -63,15 +73,24 @@ public class CheckFactory {
      * determine whether to call onFail
      * @param mold Mold used to create ResultMap when !test
      */
-    public Check satisfies(Map mold, CheckFunk<Boolean> test) {
+    @EnsuresNonNull({"#1", "#2"})
+    public Check satisfies(Map mold,
+                           CheckFunk<Boolean> test) {
+        if (mold == null) throw new NullPointerException("mold must not be null");
+        if (test == null) throw new NullPointerException("test must not be null");
+        Map localMold = mold;
         return satisfies(mold, test, (input, ctx) -> {
-                if (mold.get("key") == null)
-                    throw new NullPointerException("key must be provided");
-                return ResultMap.from(
-                    mold.get("key").toString(),
-                    new ArrayList<>(Arrays.asList(
-                                    new Result(mold.get("msg").toString(),
-                                               mold.get("code").toString()))));
+                if (localMold.get("key") == null)
+                    throw new NullPointerException("key must not be null");
+                if (localMold.get("msg") == null)
+                    throw new NullPointerException("msg must not be null");
+                if (localMold.get("code") == null)
+                    throw new NullPointerException("code must not be null");
+                return ResultMap
+                    .from(localMold.get("key").toString(),
+                          new ArrayList<>(Arrays
+                                          .asList(new Result(localMold.get("msg").toString(),
+                                                             localMold.get("code").toString()))));
             });
     }
 
@@ -85,15 +104,21 @@ public class CheckFactory {
      * which should indicate test failure
      * @return Check to evaluate input
      */
+    @EnsuresNonNull({"#1","#2","#3"})
     public Check satisfies(Map mold,
                            CheckFunk<Boolean> test,
                            CheckFunk<ResultMap> onFail) {
+        if (mold == null) throw new NullPointerException("mold must not be null");
+        if (test == null) throw new NullPointerException("test must not be null");
+        if (onFail == null) throw new NullPointerException("onFail must not be null");
+        CheckFunk<Boolean> localTest = test;
+        CheckFunk<ResultMap> localOnFail = onFail;
         Check newCheck = new Check() {
                 @Override
                 public ResultMap call(Object input,
                                       EvalContext ctx) {
-                    return test.call(input, ctx) ?
-                        ResultMap.passed() : onFail.call(input, ctx);
+                    return localTest.call(input, ctx) ?
+                        ResultMap.CLEAN : localOnFail.call(input, ctx);
                 }
             };
         newCheck.setMold(mold);
@@ -112,9 +137,8 @@ public class CheckFactory {
      * @param rules Sequence of Checks, all of which wil be executed
      * @return Composed Check to evaluate input and return the merged ResultMap
      */
-    public Check all(Check... checks) {
-        return new AllCheck(new ArrayList<>(Arrays.asList(checks)));
-    }
+    @EnsuresNonNull({"#1"})
+    public Check all(Check... checks) { return new AllCheck(asNonNullList(checks)); }
 
     /**
      * Combine sequence of provided checks with a short circuited logical `and`
@@ -124,9 +148,7 @@ public class CheckFactory {
      * @return Composed Check to evaluate input and return the first
      * non-passing ResultMap else ResultMap.passed()
      */
-    public Check and(Check... checks) {
-        return new AndCheck(new ArrayList<>(Arrays.asList(checks)));
-    }
+    public Check and(Check... checks) { return new AndCheck(asNonNullList(checks)); }
 
     /**
      * Combine sequence of provided checks with a short circuited logical 'or'
@@ -137,8 +159,15 @@ public class CheckFactory {
      * @return Composed Check to evaluate input and return the first
      * ResultMap.passed() or last non-passing
      */
-    public Check or(Check... checks) {
-        return new OrCheck(new ArrayList<>(Arrays.asList(checks)));
+    @EnsuresNonNull({"#1"})
+    public Check or(Check... checks) { return new OrCheck(asNonNullList(checks)); }
+
+    @EnsuresNonNull({"#1"})
+    private List<? extends Check> asNonNullList(Check... checks) {
+        if (checks == null) throw new NullPointerException("checks must not be null");
+        for (Check check: checks)
+            if (check == null) throw new NullPointerException("All checks must not be null");
+        return Arrays.asList(checks);
     }
 
     public Mold moldify(Map<String, String> values) {
@@ -155,13 +184,17 @@ public class CheckFactory {
             this.inner = input;
         }
 
+        @EnsuresNonNull({"#1", "#2"})
         public Mold withDefault(String key, String value) {
+            if (key == null) throw new NullPointerException("key must not be null");
+            if (value == null) throw new NullPointerException("value must not be null");
             if (!inner.containsKey(key)) inner.put(key, value);
             return this;
         }
 
         @Override
-        public Set<Map.Entry<String, String>> entrySet() {
+        @SuppressWarnings("keyfor") //Implicitly trust internal Map implementation
+        public Set<Map.Entry<@KeyFor("this") String, String>> entrySet() {
             return inner.entrySet();
         }
 
@@ -171,7 +204,8 @@ public class CheckFactory {
         }
 
         @Override
-        public Set<String> keySet() {
+        @SuppressWarnings("keyfor") //Implicitly trust internal Map implementation
+        public Set<@KeyFor("this") String> keySet() {
             return inner.keySet();
         }
 
@@ -181,23 +215,30 @@ public class CheckFactory {
         }
 
         @Override
+        @EnsuresNonNull({"#1"})
         public void putAll(Map<? extends String, ? extends String> m) {
+            if (m == null) throw new NullPointerException("m must not be null");
             inner.putAll(m);
         }
 
         @Override
-        public String remove(Object key) {
+        public @Nullable String remove(Object key) {
             return inner.remove(key);
         }
 
         @Override
-        public String put(String key, String value) {
+        @EnsuresNonNull({"#1", "#2"})
+        public @Nullable String put(String key, String value) {
+            if (key == null) throw new NullPointerException("key must not be null");
+            if (value == null) throw new NullPointerException("value must not be null");
             return inner.put(key, value);
         }
 
         @Override
         public String get(Object key) {
-            return inner.get(key);
+            String value = inner.get(key);
+            if (value == null) throw new NullPointerException("Requested key has no value");
+            return value;
         }
 
         @Override

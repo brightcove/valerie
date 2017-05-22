@@ -2,73 +2,138 @@ package val;
 
 import java.util.*;
 
+import org.checkerframework.checker.nullness.qual.*;
+
 /**
- * A collection of all {@link Result}s returned by evaluating a Checkers
- * This is effectively a Map where the key is an identifier for the result
- * (normally the field being checked)
- * and the value is the list of all of the {@link Result}s for that key.
- *
- * If the map is empty then the checks have nothing to say (everything passed).
- * ResultMaps are immutable value objects
+ * An immutable value object which conveys
+ * the result of an evaluation of a {@link Check} against a provided input.
+ * This is represented as a Map where the {@code key} defines the context
+ * for specific feedback and the value is a {@link Result} object
+ * prooviding that feedback. In conventional use the key will be the
+ * field or complete path to a field for which the {@link Result}
+ * applies.
+ * <p>
+ * If the map is empty then the checks have nothing to say (everything passed)
+ * and the ResultMap is considered {@code clean}.
+ * </p><p>
+ * ResultMaps are immutable and intended to be combined using the {@link #plus}
+ * method. This adheres to functional practices (monad-y containing of side
+ * effects), defines a clear relationship with combining
+ * {@link Check}s and facilitates concurrency.
+ * </p>
  */
 public class ResultMap {
+
+    /**
+     * The results this ResultMap represents, where the keys identify
+     * the path or similar context and the values are the list of
+     * {@link Result}s for that context.
+     */
     private final Map<String, List<Result>> values;
 
-    //The vast majority/all of the values will normally be equal to this, so a
-    // flyweight is used
-    //This behavior should not be considered part of the exposed API or relied
-    // on in any client code
-    final static ResultMap PASSED = new ResultMap(new HashMap<>());
-
     /**
-     * A convenience factory method for an empty/passing ResultMap
-     * @return ResultMap with no entries
+     * Whether the evaluation which created this ResultMap warranted no
+     * feedback.
      */
-    public static ResultMap passed() {
-        return PASSED;
-    }
+    private final boolean clean;
 
     /**
-     * Retrieve a ResultMap containing the entries in the provided Map.
-     * This is the standard way of retrieving a ResultMap
-     * @param map A Map with entries where the keys are groupings
+     * Whether the evaluation which created this ResultMap warranted no
+     * feedback.
+     * Stored eagerly, primarily to optimize for {@link #CLEAN} flyweight.
+     * @return true if the ResultMap contains no feedback, false otherwise
+     */
+    public boolean isClean() { return clean; }
+
+    /**
+     * An empty ResultMap instance which should be used in cases where there is
+     * no feedback to provide.
+     * This instance is used as a flyweight as it is expected to be the result
+     * for the majority of evaluations (but the flyweight identity should not
+     * be relied upon by any client code).
+     */
+    final static ResultMap CLEAN = new ResultMap(new HashMap<>());
+
+    /**
+     * Create a ResultMap containing the entries in the provided Map.
+     * This is the standard way of creating a ResultMap
+     *
+     * @param map A Map with entries where the keys are context
      * and the values are the list of Results
      * @return A ResultMap with the entries provided
      */
+    @EnsuresNonNull({"#1"})
     public static ResultMap from(Map<String, List<Result>> map) {
-        if (map.isEmpty()) return PASSED;
+        if (map == null) throw new NullPointerException("map must not be null");
+        if (map.isEmpty()) return CLEAN;
+        //TODO: Ensure map does not contain any nulls
         return new ResultMap(map);
     }
 
+    /**
+     * Creates a ResultMap with an entry where the key is
+     * {@code key} an the value is {@code results}.
+     *
+     * @param key The String key for the entry in the new object
+     * @param results The list of {@link Result}s to associate with
+     * key in the new object.
+     * @return A ResultMap containing the provided entry
+     * @throws {@link NullPointerException} if either argument is null.
+     */
     public static ResultMap from(String key, List<Result> results) {
+        if (key == null) throw new NullPointerException("key must not be null");
+        if (results == null) throw new NullPointerException("results must not be null");
         Map<String, List<Result>> map = new HashMap<>();
         map.put(key, results);
         return ResultMap.from(map);
     }
 
-    //Hide the default constructor to allow avoiding instantiation and allow
-    // flyweight style optimizations
-    private ResultMap(Map<String, List<Result>> pValues) {
-        this.values = new HashMap<String, List<Result>>(pValues);
+    /**
+     * Internal constructor which ensures immutability of contained content.
+     */
+    private ResultMap(@NonNull Map<String, List<Result>> pValues) {
+        Map<String, List<Result>> values = new HashMap<String, List<Result>>(pValues.size());
+        for (Map.Entry<String, List<Result>> entry: pValues.entrySet()) {
+            if (entry.getKey() == null) throw new NullPointerException("All keys must not be null");
+            List<Result> from = entry.getValue();
+            if (from == null) throw new NullPointerException("All values must not be null");
+            List<Result> results = new ArrayList<Result>(from.size());
+            for (Result result: from) {
+                if (result == null) throw new NullPointerException("All Results must not be null");
+                results.add(result);
+            }
+            values.put(entry.getKey(), results);
+        }
+        this.values = values;
+        clean = this.values.isEmpty();
     }
 
     /**
-     * Return a representation of this ResultMap as a Map
-     * @return A Map containing the entries within this ResultMap
+     * Return a representation of this ResultMap as a Map.
+     * @return A Map containing the entries within this ResultMap.
      */
     public Map<String, List<Result>> asMap() {
-        return new HashMap<>(values);
+        Map<String, List<Result>> valueCopy = new HashMap<>();
+        for (Map.Entry<String, List<Result>> entry: this.values.entrySet()) {
+            valueCopy.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(valueCopy);
     }
 
     /**
      * Return a ResultMap which contains the merged result of the entries of
-     * this ResultMap and the one passed as an argument
-     * @param right The ResultMap to be merged with this ResultMap
-     * @return a ResultMap containing the merged entries of this and right
+     * this ResultMap and the one passed as an argument.
+     * In either side {@code isClean}, returns the other side
+     * (though identity should not be relied upon).
+     * @param right The ResultMap to be merged with this ResultMap.
+     * @return A ResultMap containing the merged entries of this and right.
+     * @throws {@link NullPointerException} if right is null.
      */
+    @EnsuresNonNull({"#1"})
     ResultMap plus(ResultMap right) {
-        if (right.values.isEmpty()) return this;
-        if (this.values.isEmpty()) return right;
+        if (right == null) throw new NullPointerException("Cannot accept null");
+        if (right.isClean()) return this;
+        if (this.isClean()) return right;
         Map<String, List<Result>> merged = new HashMap<>(this.values);
         for (Map.Entry<String, List<Result>> e: right.values.entrySet()) {
             String k = e.getKey();
@@ -82,7 +147,7 @@ public class ResultMap {
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(@Nullable Object other) {
         return other instanceof ResultMap &&
             Objects.equals(values, ((ResultMap) other).values);
     }

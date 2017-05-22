@@ -331,7 +331,7 @@ class Idator<T extends Checkers> extends Check {
         def scope = childIdator(mCheck: NopTransformer.INSTANCE)
                                 .using(checkers, definition)
         return { input, ctx ->
-            def results = ResultMap.passed()
+            def results = ResultMap.CLEAN
             //Evaluate each input value using the same Check
             input.each{
                 results += scope(it, ctx) }

@@ -1,5 +1,5 @@
 ruleset {
     LineLength {
-        length = 80
+        length = 100
     }
 }
