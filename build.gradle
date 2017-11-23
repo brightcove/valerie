@@ -3,7 +3,17 @@ plugins {
     id 'maven-publish'
     id 'codenarc'
     id 'net.researchgate.release' version '2.2.2'
-    id "com.jfrog.bintray" version "1.4"
+    id 'com.jfrog.bintray' version '1.4'
+}
+
+configurations {
+    checkerAnnotatedJDK {
+        description =
+	    'a copy of JDK classes with Checker Framework type qualifers inserted'
+    }
+    checker {
+        description = 'The Checker Framework: custom pluggable types for Java'
+    }
 }
 
 repositories {
@@ -13,6 +23,21 @@ repositories {
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.5'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+
+    def checkerVersion = '2.1.10'
+    checkerAnnotatedJDK "org.checkerframework:jdk8:${checkerVersion}"
+    checker "org.checkerframework:checker:${checkerVersion}"
+    compile "org.checkerframework:checker-qual:${checkerVersion}"
+}
+
+allprojects {
+    tasks.withType(JavaCompile).all { JavaCompile compile ->
+        compile.options.compilerArgs = [
+	    '-processor', 'org.checkerframework.checker.nullness.NullnessChecker',
+	    '-processorpath', "${configurations.checker.asPath}",
+	    "-Xbootclasspath/p:${configurations.checkerAnnotatedJDK.asPath}"
+	]
+    }
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -22,6 +47,17 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier = 'javadoc'
     from javadoc.destinationDir
+}
+
+task doxygen(type: Exec) {
+     workingDir 'docs'
+     commandLine 'doxygen'
+}
+
+task sphinx(type: Exec) {
+     dependsOn doxygen
+     workingDir 'docs'
+     commandLine 'make', 'html'
 }
 
 publishing {
@@ -64,4 +100,4 @@ bintrayUpload.onlyIf{
 
 codenarc.config = resources.text.fromFile('config/codenarc/codenarc.groovy')
 
-wrapper.gradleVersion = '2.10'
+wrapper.gradleVersion = '4.3.1'
