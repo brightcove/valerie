@@ -40,7 +40,7 @@ import org.checkerframework.checker.nullness.qual.*;
  * Additionally "field" is used in the general sense throughout
  * rather than with the programming/Java connotations.*
  */
-public class Result {
+public final class Result {
 
     /**
      * The value provided violates a defined constraint.
@@ -108,13 +108,6 @@ public class Result {
 	return new Result(message, code);
     }
 
-    /**
-     * Perform a value based comparison against `other`.
-     * Returns whether `other` is also a `Result` with the
-     * same attributes as this Result.
-     * @param other Object to test equality against.
-     * @return Whether `other` is equal to this.
-     */
     @Override
     public boolean equals(@Nullable Object other) {
 	if (!(other instanceof Result)) return false;
