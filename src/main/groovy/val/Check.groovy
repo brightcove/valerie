@@ -125,10 +125,10 @@ abstract class AbstractComposedCheck implements Check {
 class AndCheck extends AbstractComposedCheck {
     @Override
     ResultMap call(Object input, EvalContext ctx) {
-        ResultMap result = ResultMap.passed()
+        ResultMap result = ResultMap.CLEAN
         for (Check check in members){
             result = check(input, ctx)
-            if (result != ResultMap.passed()) return result
+            if (result != ResultMap.CLEAN) return result
         }
         result
     }
@@ -144,7 +144,7 @@ class OrCheck extends AbstractComposedCheck {
         ResultMap result
         for (Check check in members){
             result = check(input, ctx)
-            if (result == ResultMap.passed()) return result
+            if (result == ResultMap.CLEAN) return result
         }
         result
     }
@@ -157,7 +157,7 @@ class OrCheck extends AbstractComposedCheck {
 class AllCheck extends AbstractComposedCheck {
     @Override
     ResultMap call(Object input, EvalContext ctx) {
-        ResultMap merged = ResultMap.passed()
+        ResultMap merged = ResultMap.CLEAN
         for (Check check in members){
             merged += check(input, ctx)
         }

@@ -331,11 +331,11 @@ class Idator<T extends Checkers> implements Check {
     Check withEachValue(Closure<Check> definition) {
         def scope = childIdator().using(checkers, definition)
         return { input, ctx ->
-            def results = ResultMap.passed()
+            def results = ResultMap.CLEAN
             //Evaluate each input value using the same Check
-            input.each{
-                results += scope(it, ctx) }
-            results }
+            input.each{ results += scope(it, ctx) }
+            results
+	}
     }
 
     //FIXME: This belongs in Checkers
@@ -363,12 +363,11 @@ class Idator<T extends Checkers> implements Check {
         }
         return { input, ctx ->
             for (Map.Entry<Check, Check> entry: condMap) {
-                if ((entry.key.call(accessor(input), ctx))
-                        == ResultMap.passed()) {
+                if ((entry.key.call(accessor(input), ctx)) == ResultMap.CLEAN) {
                     return entry.value.call(input, ctx)
                 }
             }
-            ResultMap.passed()
+            ResultMap.CLEAN
         }
     }
 

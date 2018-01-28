@@ -25,7 +25,7 @@ class Checkers {
      * @return Check that returns ResultMap.passed()
      */
     Check pass() {
-        { input, ctx -> ResultMap.passed() }
+        { input, ctx -> ResultMap.CLEAN }
     }
 
     /**
@@ -67,13 +67,13 @@ class Checkers {
         { input, ctx ->
             if (!(input instanceof Map))
                 return ResultMap.from(
-                    (mold.key): [new Result('only maps are supported',
+                    (mold.key ?: ''): [new Result('only maps are supported',
                                        'ILLEGAL_VALUE')])
             Map collectedResults = [:]
             ((Map) input).keySet().each{ fieldName ->
                 if (!fields.contains(fieldName)) {
                     String prefix = mold.key ? "${mold.key}." : ''
-                    collectedResults."${prefix}${fieldName}" =
+                    collectedResults["${prefix}${fieldName}"] =
                         [new Result(mold.msg, mold.code)]
                 }
             }
@@ -272,7 +272,7 @@ class Checkers {
                     Closure<Boolean> test,
                     Closure<ResultMap> onFail) {
         { input, ctx ->
-            test(input, ctx) ? ResultMap.passed() : onFail(input, ctx) }
+            test(input, ctx) ? ResultMap.CLEAN : onFail(input, ctx) }
     }
 
     //
@@ -330,8 +330,8 @@ class Checkers {
     Check when(Check testCheck,
                Check bodyCheck) {
         { input, ctx ->
-            testCheck(input, ctx) == ResultMap.passed() ? bodyCheck(input, ctx)
-                                                        : ResultMap.passed() }
+            testCheck(input, ctx) == ResultMap.CLEAN ? bodyCheck(input, ctx)
+                                                     : ResultMap.CLEAN }
     }
 
     /**
@@ -345,8 +345,8 @@ class Checkers {
     Check unless(Check testCheck,
                  Check bodyCheck) {
         { input, ctx ->
-            testCheck(input, ctx) != ResultMap.passed() ? bodyCheck(input, ctx)
-                                                        : ResultMap.passed() }
+            testCheck(input, ctx) != ResultMap.CLEAN ? bodyCheck(input, ctx)
+                                                     : ResultMap.CLEAN }
     }
 
     /**
@@ -369,10 +369,10 @@ class Checkers {
               msg:'condition satisfied which should not have been',
               code:'NEGATED_CHECK'] + mold
         { input, ctx ->
-            check(input, ctx) == ResultMap.passed() ? ResultMap.from(
+            check(input, ctx) == ResultMap.CLEAN ? ResultMap.from(
               [(mold.key.toString()): [new Result(mold.msg.toString(),
                                                   mold.code.toString())]])
-                                               : ResultMap.passed() }
+                                               : ResultMap.CLEAN }
     }
 
 }

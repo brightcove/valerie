@@ -8,6 +8,12 @@ Result
 .. doxygenclass:: val::Result
    :members:
 
+ResultMap
+-------
+      
+.. doxygenclass:: val::ResultMap
+   :members:		  
+      
 Indices and tables
 ==================
 

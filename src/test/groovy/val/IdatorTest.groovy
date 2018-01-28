@@ -130,7 +130,7 @@ class IdatorTest extends Specification {
         }
 
         expect:
-        check([child1: 'a', child2: 'a'], ctx) == ResultMap.passed()
+        check([child1: 'a', child2: 'a'], ctx) == ResultMap.CLEAN
         check([child1: 'a', child2: 1], ctx) == ResultMap.from(
             ['wrong': [new val.Result('do not match', 'MISMATCH')]])
     }
@@ -152,7 +152,7 @@ class IdatorTest extends Specification {
         (0..500).collect{num -> Thread.start{
             try {
                 assert check([child1: num, child2: num],
-                        new EvalContext()) == ResultMap.passed()
+                        new EvalContext()) == ResultMap.CLEAN
             }
             catch(Throwable ex) {
                 println ex

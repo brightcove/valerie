@@ -10,7 +10,7 @@ class CheckersTest extends Specification {
 
     def 'pass returns passed'() {
         expect:
-        v.pass()('anything', ctx) == ResultMap.passed()
+        v.pass()('anything', ctx) == ResultMap.CLEAN
     }
 
     def 'fail => entry'() {
@@ -44,8 +44,7 @@ class CheckersTest extends Specification {
 
         expect:
         check('invalid', ctx) == ResultMap.from(
-                [(null): [new Result('only maps are supported',
-                        'ILLEGAL_VALUE')]])
+                ['': [new Result('only maps are supported', 'ILLEGAL_VALUE')]])
     }
 
     def 'hasOnlyFieldsIn => entry for each field not in set'() {
