@@ -1,8 +1,8 @@
 package val;
 
 import java.util.Objects;
-
-import org.checkerframework.checker.nullness.qual.*;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Feedback for an individual validation rule.
@@ -39,46 +39,50 @@ import org.checkerframework.checker.nullness.qual.*;
  * replace or abandon at will.
  * Additionally "field" is used in the general sense throughout
  * rather than with the programming/Java connotations.*
- */
+ **/
 public final class Result {
 
     /**
      * The value provided violates a defined constraint.
-     */
+     **/
     public static final String CODE_ILLEGAL_VALUE = "ILLEGAL_VALUE";
 
     /**
      * The value provided is targetting a field which is not supported.
-     */
+     **/
     public static final String CODE_ILLEGAL_FIELD = "ILLEGAL_FIELD";
 
     /**
      * A value has not been provided for a field which requires a value.
-     */
+     **/
     public static final String CODE_REQUIRED_FIELD = "REQUIRED_FIELD";
 
     /**
      * The value provided is shorter than the minimum allowed length.
-     */
+     **/
     public static final String CODE_TOO_SHORT = "TOO_SHORT";
 
     /**
      * The value provided is longer than the maximum allowed length.
-     */
+     **/
     public static final String CODE_TOO_LONG = "TOO_LONG";
 
     private final String message;
     /**
-     * @return Human readable information about this result.
-     */
+     * Human readable information about this result.
+     *
+     * @return A string to be displayed to a user.
+     **/
     public String getMessage() {
 	return message;
     }
 
     private final String code;
     /**
-     * @return Terse, machine-friendly information about this result
-     */
+     * Terse, machine-friendly information about this result.
+     *
+     * @return A string intended for the user or client logic.
+     **/
     public String getCode() {
 	return code;
     }
@@ -86,7 +90,7 @@ public final class Result {
     /**
      * @deprecated Prefer #from
      * @private
-     */
+     **/
     @EnsuresNonNull({"this.message", "this.code"})
     Result(String message, String code) {
 	if (message == null)
@@ -98,11 +102,12 @@ public final class Result {
 
     /**
      * Return a Result instance with the provided `message` and `code`.
+     *
      * @param message Human readable information about this result.
      * @param code Terse, machine-friendly information about this result.
      * @return Result instance with provided values.
      * @throws NullPointerException if either property is null.
-     */
+     **/
     @EnsuresNonNull({"#1", "#2"})
     public static Result from(String message, String code) {
 	return new Result(message, code);

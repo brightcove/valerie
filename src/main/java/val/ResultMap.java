@@ -1,8 +1,14 @@
 package val;
 
-import java.util.*;
-
-import org.checkerframework.checker.nullness.qual.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An immutable value object which conveys the result of an evaluation
@@ -15,14 +21,14 @@ import org.checkerframework.checker.nullness.qual.*;
  *
  * If the map is empty then the checks have nothing to say (everything passed)
  * and the ResultMap is considered `clean`.
- */
+ **/
 public abstract class ResultMap {
 
     /**
      * Whether the evaluation which created this ResultMap warranted no feedback.
      *
      * @return true if the ResultMap contains no feedback, false otherwise.
-     */
+     **/
     public abstract boolean isClean();
 
     // isClean is called heavily during composition of checks and is expected
@@ -47,7 +53,7 @@ public abstract class ResultMap {
      *
      * The keys identify the path or similar context
      * and the values are the list of {@link Result}s for that context.
-     */
+     **/
     final Map<String, List<Result>> values;
 
     /**
@@ -56,7 +62,7 @@ public abstract class ResultMap {
      * This instance is used as a flyweight as it is expected to be the
      * result for the majority of evaluations (but the flyweight identity
      * should not be relied upon in any client code).
-     */
+     **/
     final static ResultMap CLEAN = new CleanResultMap();
 
     /**
@@ -65,10 +71,10 @@ public abstract class ResultMap {
      * This is the standard way of creating a ResultMap.
      * 
      * @param map A Map with entries where the keys are context
-     * and the values are the list of Results.
+     *            and the values are the list of Results.
      * @return A ResultMap with the entries provided.
      * @throws NullPointerException if map is null.
-     */
+     **/
     @EnsuresNonNull({"#1"})
     public static ResultMap from(Map<String, List<Result>> map) {
 	if (map == null) throw new NullPointerException("map must not be null");
@@ -83,7 +89,7 @@ public abstract class ResultMap {
      * @param results The list of Results to associate with the provided key.
      * @return A single key ResultMap containing the provided entry.
      * @throws NullPointerException if either argument is null.
-     */
+     **/
     @EnsuresNonNull({"#1", "#2"})
     public static ResultMap from(String key, List<Result> results) {
 	if (key == null) throw new NullPointerException("key must not be null");
@@ -94,7 +100,7 @@ public abstract class ResultMap {
 	return ResultMap.from(map);
     }
 
-    /**
+    /*
      * Internal constructor which ensures immutability of contained content.
      */
     private ResultMap(@NonNull Map<String, List<Result>> arg) {
@@ -127,7 +133,7 @@ public abstract class ResultMap {
      * A (deep) copy should be made if any modifications are desired.
      *
      * @return A Map containing the entries within this ResultMap.
-     */
+     **/
     public Map<String, List<Result>> asMap() {
 	return values;
     }
@@ -141,7 +147,7 @@ public abstract class ResultMap {
      * @param right The ResultMap to merge with this ResultMap
      * @return A ResultMap containing the combined results of this and right.
      * @throws NullPointerException if right is null.
-     */
+     **/
     @EnsuresNonNull({"#1"})
     ResultMap plus(ResultMap right) {
 	if (right == null)
@@ -153,6 +159,7 @@ public abstract class ResultMap {
 	mapCopy(merged, right.values);
 	return new StandardResultMap(merged);
     }
+
     // Facilitate deep copies
     private void mapCopy(Map<String, List<Result>> dest,
 			 Map<String, List<Result>> src) {

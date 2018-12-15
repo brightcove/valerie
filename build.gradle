@@ -1,19 +1,9 @@
 plugins {
-    id 'groovy'
-    id 'maven-publish'
-    id 'codenarc'
-    id 'net.researchgate.release' version '2.2.2'
-    id 'com.jfrog.bintray' version '1.4'
-}
-
-configurations {
-    checkerAnnotatedJDK {
-        description =
-	    'a copy of JDK classes with Checker Framework type qualifers inserted'
-    }
-    checker {
-        description = 'The Checker Framework: custom pluggable types for Java'
-    }
+    id("java-library")
+    id("groovy")
+    id("maven-publish")
+    id("com.jfrog.bintray") version "1.8.4"
+    id("com.jaredsburrows.checkerframework") version "0.2.2"
 }
 
 repositories {
@@ -21,43 +11,18 @@ repositories {
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.4.5'
-    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-
-    def checkerVersion = '2.1.10'
-    checkerAnnotatedJDK "org.checkerframework:jdk8:${checkerVersion}"
-    checker "org.checkerframework:checker:${checkerVersion}"
-    compile "org.checkerframework:checker-qual:${checkerVersion}"
-}
-
-allprojects {
-    tasks.withType(JavaCompile).all { JavaCompile compile ->
-        compile.options.compilerArgs = [
-	    '-processor', 'org.checkerframework.checker.nullness.NullnessChecker',
-	    '-processorpath', "${configurations.checker.asPath}",
-	    "-Xbootclasspath/p:${configurations.checkerAnnotatedJDK.asPath}"
-	]
-    }
+    implementation("org.codehaus.groovy:groovy-all:2.4.5")
+    testImplementation("org.spockframework:spock-core:1.0-groovy-2.4")
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    classifier = "sources"
     from sourceSets.main.allSource
 }
+
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    classifier = "javadoc"
     from javadoc.destinationDir
-}
-
-task doxygen(type: Exec) {
-     workingDir 'docs'
-     commandLine 'doxygen'
-}
-
-task sphinx(type: Exec) {
-     dependsOn doxygen
-     workingDir 'docs'
-     commandLine 'make', 'html'
 }
 
 publishing {
@@ -67,26 +32,26 @@ publishing {
             groupId project.group
             artifactId project.name
             version project.version
-	    artifact sourcesJar
-	    artifact javadocJar
+            artifact sourcesJar
+            artifact javadocJar
         }
     }
 }
 
 bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    publications = ['MainPublication']
+    user = System.getenv("BINTRAY_USER")
+    key = System.getenv("BINTRAY_KEY")
+    publications = ["MainPublication"]
     publish = true
     pkg {
-        repo = 'valerie'
-        name = 'valerie'
-        userOrg = 'brightcove'
+        repo = "valerie"
+        name = "valerie"
+        userOrg = "brightcove"
         desc = project.description
-        websiteUrl = 'https://github.com/brightcove/valerie'
-        issueTrackerUrl = 'https://github.com/brightcove/valerie/issues'
-        vcsUrl = 'https://github.com/brightcove/valerie.git'
-        licenses = ['Apache-2.0']
+        websiteUrl = "https://github.com/brightcove/valerie"
+        issueTrackerUrl = "https://github.com/brightcove/valerie/issues"
+        vcsUrl = "https://github.com/brightcove/valerie.git"
+        licenses = ["Apache-2.0"]
         version {
             name = project.version
             released = new Date()
@@ -94,10 +59,8 @@ bintray {
     }
 }
 
-bintrayUpload.onlyIf{
+bintrayUpload.onlyIf {
     !(version ==~ /.*SNAPSHOT/)
 }
 
-codenarc.config = resources.text.fromFile('config/codenarc/codenarc.groovy')
-
-wrapper.gradleVersion = '4.3.1'
+wrapper.gradleVersion = "5.0"
