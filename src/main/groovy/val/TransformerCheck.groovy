@@ -1,6 +1,6 @@
 package val
 
-abstract class TransformerCheck implements Check {
+abstract class TransformerCheck extends Check {
     Check nestedCheck
     String toStash
 

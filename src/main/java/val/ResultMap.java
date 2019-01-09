@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
@@ -42,7 +41,7 @@ public abstract class ResultMap {
     }
 
     private static final class StandardResultMap extends ResultMap {
-	private StandardResultMap(Map<String, List<Result>> values) {
+	private StandardResultMap(final Map<String, List<Result>> values) {
 	    super(values);
 	}
 	public boolean isClean() { return this.values.isEmpty(); }
@@ -76,7 +75,7 @@ public abstract class ResultMap {
      * @throws NullPointerException if map is null.
      **/
     @EnsuresNonNull({"#1"})
-    public static ResultMap from(Map<String, List<Result>> map) {
+    public static ResultMap from(final Map<String, List<Result>> map) {
 	if (map == null) throw new NullPointerException("map must not be null");
 	if (map.isEmpty()) return CLEAN;
 	return new StandardResultMap(map);
@@ -91,7 +90,7 @@ public abstract class ResultMap {
      * @throws NullPointerException if either argument is null.
      **/
     @EnsuresNonNull({"#1", "#2"})
-    public static ResultMap from(String key, List<Result> results) {
+    public static ResultMap from(final String key, final List<Result> results) {
 	if (key == null) throw new NullPointerException("key must not be null");
 	if (results == null)
 	    throw new NullPointerException("results must not be null");
@@ -103,7 +102,7 @@ public abstract class ResultMap {
     /*
      * Internal constructor which ensures immutability of contained content.
      */
-    private ResultMap(@NonNull Map<String, List<Result>> arg) {
+    private ResultMap(final Map<String, List<Result>> arg) {
 	// Validate that provided map does not contain any null pointers,
 	// while copying to a structure that can be typed as such.
 	Map<String, List<Result>> values =
@@ -144,25 +143,25 @@ public abstract class ResultMap {
      * Return a ResultMap which contains the merged result of the entires of
      * this ResultMap and the one passed as an argument.
      *
-     * @param right The ResultMap to merge with this ResultMap
-     * @return A ResultMap containing the combined results of this and right.
+     * @param other The ResultMap to merge with this ResultMap
+     * @return A ResultMap containing the combined results of this and other.
      * @throws NullPointerException if right is null.
      **/
     @EnsuresNonNull({"#1"})
-    ResultMap plus(ResultMap right) {
-	if (right == null)
+    ResultMap plus(final ResultMap other) {
+	if (other == null)
 	    throw new NullPointerException("Null argument is prohibited.");
-	if (right.isClean()) return this;
-	if (this.isClean()) return right;
+	if (other.isClean()) return this;
+	if (this.isClean()) return other;
 	Map<String, List<Result>> merged = new LinkedHashMap<>(this.values.size());
 	mapCopy(merged, this.values);
-	mapCopy(merged, right.values);
+	mapCopy(merged, other.values);
 	return new StandardResultMap(merged);
     }
 
     // Facilitate deep copies
-    private void mapCopy(Map<String, List<Result>> dest,
-			 Map<String, List<Result>> src) {
+    private void mapCopy(final Map<String, List<Result>> dest,
+			 final Map<String, List<Result>> src) {
 	for (Map.Entry<String, List<Result>> e: src.entrySet()) {
 	    String k = e.getKey();
 	    List<Result> vals

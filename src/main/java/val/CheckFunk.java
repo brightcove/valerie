@@ -20,5 +20,5 @@ public interface CheckFunk<T> {
      * @return The result of evaluating the provided parameters.
      *         When used to create a {@link Check}, this will be a {@link ResultMap}. 
      **/
-    T call(@Nullable Object input, EvalContext context);
+    T call(@Nullable final Object input, final EvalContext context);
 }

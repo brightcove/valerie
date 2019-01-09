@@ -92,7 +92,7 @@ public final class Result {
      * @private
      **/
     @EnsuresNonNull({"this.message", "this.code"})
-    Result(String message, String code) {
+    Result(final String message, final String code) {
 	if (message == null)
 	    throw new NullPointerException("Message must not be null");
 	if (code == null) throw new NullPointerException("Code must not be null");
@@ -109,7 +109,7 @@ public final class Result {
      * @throws NullPointerException if either property is null.
      **/
     @EnsuresNonNull({"#1", "#2"})
-    public static Result from(String message, String code) {
+    public static Result from(final String message, final String code) {
 	return new Result(message, code);
     }
 

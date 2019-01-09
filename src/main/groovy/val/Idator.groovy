@@ -18,7 +18,7 @@ package val
  * the root of the input graph and containing all other Idators
  * (normally resulting in an arborescence)
  */
-class Idator<T extends Checkers> implements Check {
+class Idator<T extends Checkers> extends Check {
 
     /**
      * A shared instance of Checkers which is used as a delegate for
