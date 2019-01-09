@@ -2,6 +2,14 @@
 API
 ####
 
+*****
+Check
+*****
+
+.. doxygenclass:: val::Check
+   :members:		  
+
+
 *********
 CheckFunk
 *********
