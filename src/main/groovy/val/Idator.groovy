@@ -36,8 +36,8 @@ class Idator<T extends Checkers> extends Check {
     private TransformerCheck mCheck
 
     //List of checks which are defined within the Definition
-    private List definedChecks = new LinkedList()
-    private List requiredChecks = new LinkedList()
+    private Check definedCheck
+    private Check requiredCheck
 
     /**
      * Construct a new Idator using provided arguments and definition
@@ -128,12 +128,14 @@ class Idator<T extends Checkers> extends Check {
               @DelegatesTo(strategy = Closure.DELEGATE_FIRST)
                       Closure definition) {
         this.checkers = checkers
+        this.definedCheck = checkers.pass()
+        this.requiredCheck = checkers.pass()
         definition.delegate = this
         definition.resolveStrategy = Closure.DELEGATE_FIRST
         def definitionReturn = definition()
-        if (definitionReturn instanceof Check) definedChecks << definitionReturn
-        mCheck.nestedCheck =
-                new AndCheck(requiredChecks + [new AllCheck(definedChecks)])
+        if (definitionReturn instanceof Check) definedCheck = definedCheck.plus(definitionReturn)
+        
+	mCheck.nestedCheck = requiredCheck.and(definedCheck)
         this
     }
 
@@ -154,9 +156,7 @@ class Idator<T extends Checkers> extends Check {
      * Define a Check to be evaluated as part of this Definition
      * @param check Check which will be evaluated against input subgraph
      */
-    void define(Check check) {
-        definedChecks << check
-    }
+    void define(Check check) { definedCheck = definedCheck.plus(check) }
 
     /**
      * Define Checks for one or more input graph children/successors nodes
@@ -203,7 +203,7 @@ class Idator<T extends Checkers> extends Check {
      */
     void subDefine(Map<String, Closure> entries) {
         entries.each{k,v->
-            definedChecks << withSubValue(k, v)
+            definedCheck = definedCheck.plus(withSubValue(k, v))
         }
     }
     void has(Map<String, Closure> entries) {
@@ -223,9 +223,7 @@ class Idator<T extends Checkers> extends Check {
      * @param check Check which will be evaluated against input graph before
      * `define`d Checks
      */
-    void require(Check check) {
-        requiredChecks << check
-    }
+    void require(Check check) { requiredCheck = requiredCheck.and(check) }
 
     /**
      * require analog for define Map syntax.

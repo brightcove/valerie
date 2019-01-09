@@ -287,9 +287,7 @@ class Checkers {
      * @param rules Sequence of Checks, all of which wil be executed
      * @return Composed Check to evaluate input and return the merged ResultMap
      */
-    Check all(Check... checks) {
-        new AllCheck(checks as ArrayList)
-    }
+    Check all(Check... checks) { checks.inject { a, b -> a.plus(b) } }
 
     /**
      * Combine sequence of provided checks with a short circuited logical `and`
@@ -299,9 +297,7 @@ class Checkers {
      * @return Composed Check to evaluate input and return the first
      * non-passing ResultMap else ResultMap.passed()
      */
-    Check and(Check... checks) {
-        new AndCheck(checks as ArrayList)
-    }
+    Check and(Check... checks) { checks.inject { a, b -> a.and(b) } }
 
     /**
      * Combine sequence of provided checks with a short circuited logical 'or'
@@ -312,9 +308,7 @@ class Checkers {
      * @return Composed Check to evaluate input and return the first
      * ResultMap.passed() or last non-passing
      */
-    Check or(Check... checks) {
-        new OrCheck(checks as ArrayList)
-    }
+    Check or(Check... checks) { checks.inject { a, b -> a.or(b) } }
 
     //
     // OTHER HIGHER ORDER FUNCTIONS
