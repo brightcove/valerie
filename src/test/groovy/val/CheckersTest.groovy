@@ -8,167 +8,6 @@ class CheckersTest extends Specification {
     def v = new Checkers()
     EvalContext ctx = new EvalContext()
 
-    def 'pass returns passed'() {
-        expect:
-        v.pass()('anything', ctx) == ResultMap.CLEAN
-    }
-
-    def 'fail => entry'() {
-        expect:
-        v.fail()('anything', ctx) ==
-            ResultMap.from('fail': [new Result('failed because you said so',
-                                               Result.CODE_ILLEGAL_VALUE)])
-        v.fail(key:'foo', msg:'bar', code:'FOO_BAR')('anything', ctx) ==
-            ResultMap.from('foo': [new Result('bar', 'FOO_BAR')])
-    }
-
-    def 'hasMember => entry if member is not present'() {
-        given:
-        Check check = v.hasMember(attribute, key:'required')
-
-        expect:
-        check(input, ctx) == ResultMap.from(results)
-
-        where:
-        input            | attribute  | results
-        [a:'test']       | 'a'        | [:]
-        [a: null]        | 'a'        | [:]
-        [:]              | 'a'        | [required:[
-                new val.Result('required field a is not present',
-                               val.Result.CODE_REQUIRED_FIELD)]]
-    }
-
-    def 'hasOnlyFieldsIn => ILLEGAL_VALUE if not map'() {
-        given:
-        Check check = v.hasOnlyFieldsIn(['a','b','c'] as Set)
-
-        expect:
-        check('invalid', ctx) == ResultMap.from(
-                ['': [new Result('only maps are supported', 'ILLEGAL_VALUE')]])
-    }
-
-    def 'hasOnlyFieldsIn => entry for each field not in set'() {
-        given:
-        Check check = v.hasOnlyFieldsIn(['a','b','c'] as Set)
-
-        expect:
-        check (input, ctx) == ResultMap.from(results)
-
-        where:
-        input                 | results
-        [a:1]                 | [:]
-        [a:1,b:2,c:3]         | [:]
-        [a:1,b:2,c:3,d:4,e:5] | [
-        d:[new val.Result('field is unknown',
-                          val.Result.CODE_ILLEGAL_FIELD)],
-        e:[new val.Result('field is unknown',
-                          val.Result.CODE_ILLEGAL_FIELD)]
-        ]
-    }
-
-    class SampleClass {
-        def a, b, c
-    }
-    def 'hasOnlyFieldsIn => entry for each field not in class'() {
-        given:
-        Check check = v.hasOnlyFieldsIn(SampleClass)
-
-        expect:
-        check(input, ctx) == ResultMap.from(results)
-
-        where:
-        input                 | results
-        [a:1]                 | [:]
-        [a:1,b:2,c:3]         | [:]
-        [a:1,b:2,c:3,d:4,e:5] | [
-        d:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)],
-        e:[new val.Result('field is unknown', val.Result.CODE_ILLEGAL_FIELD)] ]
-    }
-
-    def 'hasOnlyFieldsIn builds keys from $key.$field'() {
-        given:
-        Check check = v.hasOnlyFieldsIn(['a','b',3] as Set, key:'parent')
-
-        expect:
-        check(input, ctx) == ResultMap.from(results)
-
-        where:
-        input                 | results
-        [a:1,b:2,3:3,d:4,e:5] | [
-        'parent.d':[
-            new val.Result('field is unknown',
-                           val.Result.CODE_ILLEGAL_FIELD)],
-        'parent.e':[new val.Result('field is unknown',
-                                   val.Result.CODE_ILLEGAL_FIELD)]
-        ]
-    }
-
-    def 'hasSizeGte => entry if size < min'() {
-        given:
-        Check check = v.hasSizeGte(1, key:'value')
-
-        expect:
-        check(input, ctx) == ResultMap.from(results)
-
-        where:
-        input        | results
-        null         | [:]
-        '1'          | [:]
-        [1]          | [:]
-        [a:1]        | [:]
-        ''           | [value:[new val.Result('should be at least 1 long',
-                                              val.Result.CODE_TOO_SHORT)]]
-        []           | [value:[new val.Result('should be at least 1 long',
-                                              val.Result.CODE_TOO_SHORT)]]
-        [:]          | [value:[new val.Result('should be at least 1 long',
-                                              val.Result.CODE_TOO_SHORT)]]
-    }
-
-    @Unroll
-    def 'hasSizeLte => entry if size > max'() {
-        given:
-        Check check = v.hasSizeLte(3, key:'value')
-
-        expect:
-        check(input, ctx) == ResultMap.from(results)
-
-        where:
-        input              | results
-        null               | [:]
-        '123'              | [:]
-        [1,2,3]            | [:]
-        [a:1,b:2,c:3]      | [:]
-        '1234'             | [value:[
-                new val.Result('should be no longer than 3',
-                               val.Result.CODE_TOO_LONG)]]
-        [1,2,3,4]          | [value:[
-                new val.Result('should be no longer than 3',
-                               val.Result.CODE_TOO_LONG)]]
-        [a:1,b:2,c:3,d:4]  | [value:[
-                new val.Result('should be no longer than 3',
-                               val.Result.CODE_TOO_LONG)]]
-    }
-
-    def 'hasValueGte => entry if value < min'() {
-        given:
-        Check check = v.hasValueGte(min,key:'val')
-
-        expect:
-        check(input, ctx) == ResultMap.from(results)
-
-        where:
-        min    | input   | results
-        5      | 6       | [:]
-        5      | 5       | [:]
-        5      | 4       | [val:[new val.Result('should not be less than 5',
-                                                val.Result.CODE_ILLEGAL_VALUE)]]
-        'G'    | 'G'     | [:]
-        'G'    | 'g'     | [:]
-        'G'    | 'a'     | [:]
-        'G'    | 'A'     | [val:[new val.Result('should not be less than G',
-                                                val.Result.CODE_ILLEGAL_VALUE)]]
-    }
-
     def 'hasValueLte => entry if value > max'() {
         given:
         Check check = v.hasValueLte(max,key:'val',msg:'should be less than max')
@@ -451,7 +290,7 @@ class CheckersTest extends Specification {
     //
     // OTHER HIGHER ORDER FUNCTIONS
     //
-    def 'when evaluates bodyCheck if testCheck passes'() {
+/*    def 'when evaluates bodyCheck if testCheck passes'() {
         given:
         Check check = v.when(v.isInstanceOf(Collection, key:'test'),
                            v.hasSizeLte(5, key:'test'))
@@ -484,7 +323,7 @@ class CheckersTest extends Specification {
                                                  'TOO_LONG')]]
         [1,2,3,4,5,6]  | [:]
     }
-
+*/
     def 'not allows for inverting the behavior of a check'() {
         given:
         Check check = v.not(v.isInstanceOf(String, key:'test'))

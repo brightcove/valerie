@@ -8,6 +8,14 @@ class IdatorTest extends Specification {
     def checkers = new val.Checkers()
     EvalContext ctx = new EvalContext()
 
+    Check hasSizeLte(Long size) {
+        Check.from({Object input, EvalContext Context ->
+            (input == null || input.size() <= size)
+                ? ResultMap.CLEAN
+                : ResultMap.from(['root': [new Result("should be no longer than ${size}", 'TOO_LONG')]]) })
+    }
+
+
     def 'using creates Check out of definition'() {
         given:
         Check check = new Idator('key').using(checkers){ isNotNull() }

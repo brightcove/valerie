@@ -20,6 +20,9 @@ package val
  */
 class Idator<T extends Checkers> extends Check {
 
+    Check PASS = Check.from({final Object input, final EvalContext context ->
+        ResultMap.CLEAN })
+
     /**
      * A shared instance of Checkers which is used as a delegate for
      * Idators to allow Check construction
@@ -128,8 +131,8 @@ class Idator<T extends Checkers> extends Check {
               @DelegatesTo(strategy = Closure.DELEGATE_FIRST)
                       Closure definition) {
         this.checkers = checkers
-        this.definedCheck = checkers.pass()
-        this.requiredCheck = checkers.pass()
+        this.definedCheck = PASS
+        this.requiredCheck = PASS
         definition.delegate = this
         definition.resolveStrategy = Closure.DELEGATE_FIRST
         def definitionReturn = definition()
