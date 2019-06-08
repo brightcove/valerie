@@ -7,11 +7,71 @@ https://api.bintray.com/packages/brightcove/valerie/valerie/images/download.svg
 ) ]
 (https://bintray.com/brightcove/valerie/valerie/_latestVersion)
 
-valerie
-===
-> call on me
+# valerie
+
+> (don't) call on me (anymore) - Steve Winwood
 
 A first class validation library for the JVM
+
+## Abandoned
+
+It has been decided to halt development on Valerie. In working
+with this project it has become clear that core valuable pieces
+it provides are:
+
+- Combinable, expressive validation feedback.
+- Applying composable validation while traversing a tree/graph.
+
+The concluding line of thought is that this library should be ported
+to Java and be focused on those pieces while leaving the collection
+of predicates/matchers to other libraries. If that is done,
+it is not yet clear whether there would be enough substance left
+to justify having a library rather than capturing it in project
+local code.
+
+This is ultimately being abandoned because there has now been
+a sustained period during which there has been ideas for ways
+to improve the library, but no driving need to do so.
+
+### It's Done its Job
+
+Valerie has been in use in the system for which it was created for
+several years without the need for enhancement. The initial release
+provides flexible, albeit often awkward, building blocks; while
+there has been a background desire to provide some constructs which
+would allow for more eloquent definitions, it's never been strictly
+necessary and has never gathered enough mass to be given priority.
+Aside from the notable deficiency of lack of documentation, it's
+been extensible enough to evolve with the system without issue.
+
+### It's Not Doing Other Jobs
+
+There have been multiple projects for which validation has
+been implemented and for which there was a thought that Valerie
+would be pulled in (after removal of Groovy as a runtime dependency).
+In all of these cases, however, that never ended up happening;
+there was a repeated pattern of waiting for the validation requirements
+to grow enough in complexity, but such a tipping point was never reached.
+This leads to the conclusion that the confluence of forces that led to
+the inception of Valerie are uncommon. The key factor was likely
+non-trivial validation requirements which were being addressed by an
+implementation which was not conducive to evolution and therefore
+entropy dragged it into a tangle.
+Most services tend to have fairly simple validation requirements, and
+those that have or accrete more complex needs can apply some
+well-established practices to keep the validation in order without
+requiring the assistance of an additional library.
+
+### It's on the Path to Deprecation
+
+It's likely that the reference consumer of Valerie will shift to an
+alternative moving forward. A runtime dependency on Groovy is likely
+to be avoided and for the aforementioned reasons porting
+Valerie does not seem worthwhile, though some of the approaches
+herein may be implemented locally as required. The target service
+has a fair amount of tooling which is driven by OpenAPI and
+therefore a solution which is driven by JSON Schema definitions
+within an OpenAPI file is likely.
 
 First Class Validation
 ---
